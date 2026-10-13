@@ -1,0 +1,2 @@
+Current focus: Section 0 Foundation — test infra, then schema + DB client
+Remaining work: Section 0 (schema+migration, db client, drizzle.config, startup gate logic, diagnostics, money helper, guardrail screen, sidebar, root layout), then Sections 1–6

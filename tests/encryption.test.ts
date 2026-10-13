@@ -34,7 +34,9 @@ describe("encryptSecret / decryptSecret", () => {
 
   it("rejects tampered ciphertext via the GCM auth tag", () => {
     const ciphertext = encryptSecret("test-key");
-    const tampered = `${ciphertext.slice(0, -1)}${ciphertext.endsWith("A") ? "B" : "A"}`;
+    const [iv, authTag, data] = ciphertext.slice("enc:v1:".length).split(".");
+    const flip = data[0] === "A" ? "B" : "A";
+    const tampered = `enc:v1:${iv}.${authTag}.${flip}${data.slice(1)}`;
 
     expect(() => decryptSecret(tampered)).toThrow();
   });

@@ -1,7 +1,7 @@
 # Plan (section-item level, per AGENT_CONTRACT.md)
 
-- Item 0 (Foundation) — in progress — schema, migration, DB client, drizzle.config, money helper, diagnostics done; startup gate logic next — guardrail screen, sidebar, root layout
-- Item 1 (Config) — — pending — — —
+- Item 0 (Foundation) — done — all Section 0 checklist items committed — none
+- Item 1 (Config) — in progress — settings KV resolver (DB → env fallback) next — LLM dispatcher, AES-256-GCM encrypt/decrypt wired into save + dispatch, opening balance conversion, settings page + save action
 - Item 2 (Invoice Pipeline) — — pending — — —
 - Item 3 (Manual Transactions & Lists) — — pending — — —
 - Item 4 (Import / Export) — — pending — — —

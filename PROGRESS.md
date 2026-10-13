@@ -1,5 +1,5 @@
-Current focus: Item 4 Import/Export — not started (next session)
-Remaining work: Items 4 (CSV/XLSX import+column mapping+persistence, export), 5 (dashboard lib+page+chart), 6 (integration smoke tests); Item 3 fully DONE; src/app/page.tsx still the create-next-app template (Item 5 will replace)
+Current focus: Build complete — production build + end-to-end smoke passed
+Remaining work: none (all checklist sections DONE); user scratch file "Új szöveges dokumentum.txt" intentionally untracked
 
 - [DONE] src/db/schema.ts — 3-table Drizzle schema (invoices, transactions, settings) + initial migration — notes:
 - [DONE] src/lib/db.ts — shared Turso/Drizzle singleton, PRAGMA foreign_keys = ON, globalThis-cached in dev — notes:
@@ -32,3 +32,15 @@ Remaining work: Items 4 (CSV/XLSX import+column mapping+persistence, export), 5 
 - [DONE] src/components/transactions/manual-entry-form.tsx — wired manual entry with income/expense toggle — notes:
 - [DONE] src/components/transactions/transaction-table.tsx — signed/colored amounts, wired delete — notes:
 - [DONE] src/app/transactions/page.tsx — real filtered list, no-data state, manual form — notes:
+- [DONE] src/lib/import-parse.ts — CSV (delimiter auto-detect, UTF-8/ISO-8859-2) + XLSX first-sheet parsers — notes:
+- [DONE] src/lib/import-map.ts — column mapping + direction precedence (sign < column < override) + skip reporting — notes: SUBMISSION_NOTES.md #8
+- [DONE] src/lib/import-persist.ts — mapped rows persisted in DEFAULT_CURRENCY, "Imported" category fallback — notes: SUBMISSION_NOTES.md #8
+- [DONE] src/lib/export.ts — semicolon CSV + native date/numeric XLSX — notes:
+- [DONE] src/app/api/import/preview/route.ts — 5-row preview + headers — notes:
+- [DONE] src/app/api/import/route.ts — full import with mapping/overrides, reported skips — notes:
+- [DONE] src/app/api/export/route.ts — CSV/XLSX downloads (format query) — notes:
+- [DONE] src/components/import/import-wizard.tsx — mapping selects, per-row overrides, wired Import All Rows — notes:
+- [DONE] src/app/import/page.tsx — wizard + real export download links — notes:
+- [DONE] src/lib/dashboard.ts — pending/net/position/3-month MA/projections + monthly buckets — notes:
+- [DONE] src/components/dashboard/projection-chart.tsx — recharts line with 30/60/90 projections — notes:
+- [DONE] src/app/page.tsx — real dashboard cards, chart, method badge, multicurrency notice, currency guardrail — notes:

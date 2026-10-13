@@ -1,5 +1,5 @@
-Current focus: Section 2 Invoice Pipeline — upload endpoint size cap + rate limit + defensive parse
-Remaining work: Item 2 (upload cap/rate limit, Zod parse, sanity, line-item check, idempotency, invoices list, confirm, currency guard, inline total-edit, invoices UI), then Items 3–6
+Current focus: Section 2 Invoice Pipeline — upload endpoint (src/app/api/invoices/route.ts)
+Remaining work: Item 2 (upload route test, invoices page + table, upload form), then Items 3–6
 
 - [DONE] src/db/schema.ts — 3-table Drizzle schema (invoices, transactions, settings) + initial migration — notes:
 - [DONE] src/lib/db.ts — shared Turso/Drizzle singleton, PRAGMA foreign_keys = ON, globalThis-cached in dev — notes:
@@ -16,3 +16,7 @@ Remaining work: Item 2 (upload cap/rate limit, Zod parse, sanity, line-item chec
 - [DONE] src/app/api/settings/route.ts — settings save endpoint (encrypts keys, converts opening balance, gates on startup) — notes:
 - [DONE] src/components/settings/settings-form.tsx — wired settings form, API keys never prefilled from server — notes:
 - [DONE] src/app/settings/page.tsx — real settings fetch, passes key-set flags only — notes:
+- [DONE] src/lib/dates.ts — 1900–2100 calendar validation + YYYYMMDD conversions (SUBMISSION_NOTES #5) — notes: SUBMISSION_NOTES.md #5
+- [DONE] src/lib/invoice-parse.ts — Zod contract, fence stripping, date/amount/currency sanity, line-item mismatch flag — notes:
+- [DONE] src/lib/upload-guard.ts — 15MB cap all types + 10/10min per-IP rate limiter — notes: SUBMISSION_NOTES.md #6
+- [DONE] src/lib/invoices.ts — hash dedupe, create/confirm/currency guard/total-edit via atomic batch, filtered list — notes: SUBMISSION_NOTES.md #7

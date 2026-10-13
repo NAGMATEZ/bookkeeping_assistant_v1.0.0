@@ -39,7 +39,7 @@ function dateToUtcDate(dateInt: number): Date {
   return new Date(Date.UTC(year, month - 1, day));
 }
 
-export function transactionsToXlsx(rows: TransactionRow[]): Uint8Array {
+export function transactionsToXlsx(rows: TransactionRow[]): Uint8Array<ArrayBuffer> {
   const data: (string | number | Date)[][] = [[...EXPORT_HEADERS]];
   for (const row of rows) {
     data.push([

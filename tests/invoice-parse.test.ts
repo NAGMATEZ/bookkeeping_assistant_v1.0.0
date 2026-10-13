@@ -7,7 +7,7 @@
 //   "eur" → "EUR"; fenced JSON parses to dateInt 20260115.
 import { describe, expect, it } from "vitest";
 
-import { parseInvoiceLlmOutput } from "@/lib/invoice-parse";
+import { lineItemsMatchTotal, parseInvoiceLlmOutput } from "@/lib/invoice-parse";
 
 function invoiceJson(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
@@ -110,5 +110,18 @@ describe("parseInvoiceLlmOutput", () => {
     expect(() => parseInvoiceLlmOutput('{"date": "2026-01-15"}', "USD")).toThrow(
       "Invoice data from the LLM failed validation",
     );
+  });
+});
+
+describe("lineItemsMatchTotal", () => {
+  it("returns true when the stored line-item sum equals the stored total", () => {
+    const items = JSON.stringify([
+      { description: "Widget", amount_minor: 3000 },
+      { description: "Gadget", amount_minor: 2000 },
+    ]);
+
+    expect(lineItemsMatchTotal(items, 5000)).toBe(true);
+    expect(lineItemsMatchTotal(items, 1000)).toBe(false);
+    expect(lineItemsMatchTotal("not json", 5000)).toBe(false);
   });
 });

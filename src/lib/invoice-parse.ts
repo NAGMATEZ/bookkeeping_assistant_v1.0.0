@@ -54,6 +54,26 @@ export function isKnownCurrencyCode(code: string): boolean {
   return KNOWN_CURRENCIES.has(code.trim().toUpperCase());
 }
 
+export function lineItemsMatchTotal(lineItemsJson: string, totalMinor: number): boolean {
+  try {
+    const parsed: unknown = JSON.parse(lineItemsJson);
+    if (!Array.isArray(parsed)) {
+      return false;
+    }
+    const amounts = parsed.map((item) =>
+      typeof item === "object" && item !== null
+        ? (item as Record<string, unknown>).amount_minor
+        : undefined,
+    );
+    if (!amounts.every((amount): amount is number => typeof amount === "number")) {
+      return false;
+    }
+    return roundOnceToMinorUnits(sumAmounts(amounts)) === totalMinor;
+  } catch {
+    return false;
+  }
+}
+
 export function parseInvoiceLlmOutput(raw: string, defaultCurrency: string): ParsedInvoice {
   const payload = extractJsonPayload(raw);
 

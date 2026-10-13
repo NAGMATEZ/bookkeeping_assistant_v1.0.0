@@ -68,18 +68,21 @@ export async function listInvoices(filters: InvoiceFilters = {}): Promise<Invoic
     .orderBy(desc(invoices.date), desc(invoices.created_at));
 }
 
+export async function getInvoiceByContentHash(contentHash: string): Promise<InvoiceRow | null> {
+  const rows = await db
+    .select()
+    .from(invoices)
+    .where(eq(invoices.source_image, `sha256:${contentHash}`))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function createInvoiceFromLlm(
   input: CreateInvoiceInput,
 ): Promise<{ invoice: InvoiceRow; duplicate: boolean }> {
-  const hashIdentity = `sha256:${input.contentHash}`;
-
-  const existing = await db
-    .select()
-    .from(invoices)
-    .where(eq(invoices.source_image, hashIdentity))
-    .limit(1);
-  if (existing[0]) {
-    return { invoice: existing[0], duplicate: true };
+  const existing = await getInvoiceByContentHash(input.contentHash);
+  if (existing) {
+    return { invoice: existing, duplicate: true };
   }
 
   const parsed = parseInvoiceLlmOutput(input.rawLlmResponse, input.defaultCurrency);
@@ -94,7 +97,7 @@ export async function createInvoiceFromLlm(
       project: parsed.project,
       status: "needs_review",
       // source_image is repurposed as the idempotency identity (see SUBMISSION_NOTES.md #7).
-      source_image: hashIdentity,
+      source_image: `sha256:${input.contentHash}`,
       line_items: JSON.stringify(parsed.lineItems),
       raw_llm_response: input.rawLlmResponse,
     })

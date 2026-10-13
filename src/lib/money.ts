@@ -22,6 +22,14 @@ export function sumAndRoundOnce(values: readonly number[]): number {
   return roundOnceToMinorUnits(sumAmounts(values));
 }
 
+export function minorUnitsToDecimal(minorUnits: number): string {
+  const sign = minorUnits < 0 ? "-" : "";
+  const absolute = Math.abs(minorUnits);
+  const whole = Math.trunc(absolute / 100);
+  const fraction = absolute % 100;
+  return `${sign}${whole}.${String(fraction).padStart(2, "0")}`;
+}
+
 export function parseDecimalToMinorUnits(input: string): number {
   const cleaned = input.trim().replace(/[\s\u00a0]/g, "");
 

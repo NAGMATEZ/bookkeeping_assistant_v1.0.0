@@ -2,9 +2,11 @@
 // expected (hand-derived): 5.6 + 4.9 = 10.5 pre-round → one round = 11 (Math.round tie rule, SUBMISSION_NOTES #1);
 //   discriminating case: 0.4 + 0.4 → round-once = round(0.8) = 1, while round-then-sum = 0 + 0 = 0, so 1 proves no per-item rounding.
 // expected parse (major→minor, ×100): "1 000,00" → 100000; "-12.34" → -1234; "1,234.56" → 123456.
+// expected format (minor→major, ÷100): 1234 → "12.34"; -5 → "-0.05"; 100000 → "1000.00".
 import { describe, expect, it } from "vitest";
 
 import {
+  minorUnitsToDecimal,
   parseDecimalToMinorUnits,
   roundOnceToMinorUnits,
   sumAmounts,
@@ -38,5 +40,13 @@ describe("parseDecimalToMinorUnits", () => {
   it("rejects malformed or over-precise input", () => {
     expect(() => parseDecimalToMinorUnits("abc")).toThrow('Invalid amount: "abc"');
     expect(() => parseDecimalToMinorUnits("1.2345")).toThrow('Amount has more than 2 decimal places: "1.2345"');
+  });
+});
+
+describe("minorUnitsToDecimal", () => {
+  it("formats integer minor units as a decimal string", () => {
+    expect(minorUnitsToDecimal(1234)).toBe("12.34");
+    expect(minorUnitsToDecimal(-5)).toBe("-0.05");
+    expect(minorUnitsToDecimal(100000)).toBe("1000.00");
   });
 });

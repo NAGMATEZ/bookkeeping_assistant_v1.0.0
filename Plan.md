@@ -2,7 +2,8 @@
 
 - Item 0 (Foundation) — done — all Section 0 checklist items committed — none
 - Item 1 (Config) — done — all Section 1 checklist items committed; secret leak checked on live /settings HTML — none
-- Item 2 (Invoice Pipeline) — in progress — upload size cap + rate limit next — Zod parse, data sanity, line-item check, idempotency, invoices list, confirm, currency guard, inline total-edit, invoices UI
+- Item 2 (Invoice Pipeline) — done — all Section 2 checklist items committed — none
+- Item 3 (Manual Transactions & Lists) — in progress — manual entry submit + transaction CRUD next — manual form UI, transactions page + delete, invoices page delete check
 - Item 3 (Manual Transactions & Lists) — — pending — — —
 - Item 4 (Import / Export) — — pending — — —
 - Item 5 (Dashboard) — — pending — — —

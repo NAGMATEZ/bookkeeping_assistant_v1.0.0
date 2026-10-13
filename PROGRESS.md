@@ -1,5 +1,5 @@
-Current focus: Section 2 Invoice Pipeline — upload endpoint (src/app/api/invoices/route.ts)
-Remaining work: Item 2 (upload route test, invoices page + table, upload form), then Items 3–6
+Current focus: Section 3 Manual Transactions & Lists — manual entry submit (src/lib/transactions.ts)
+Remaining work: Item 3 (manual form + endpoint, transaction CRUD/filters, transactions page + delete), then Items 4–6
 
 - [DONE] src/db/schema.ts — 3-table Drizzle schema (invoices, transactions, settings) + initial migration — notes:
 - [DONE] src/lib/db.ts — shared Turso/Drizzle singleton, PRAGMA foreign_keys = ON, globalThis-cached in dev — notes:
@@ -20,3 +20,9 @@ Remaining work: Item 2 (upload route test, invoices page + table, upload form), 
 - [DONE] src/lib/invoice-parse.ts — Zod contract, fence stripping, date/amount/currency sanity, line-item mismatch flag — notes:
 - [DONE] src/lib/upload-guard.ts — 15MB cap all types + 10/10min per-IP rate limiter — notes: SUBMISSION_NOTES.md #6
 - [DONE] src/lib/invoices.ts — hash dedupe, create/confirm/currency guard/total-edit via atomic batch, filtered list — notes: SUBMISSION_NOTES.md #7
+- [DONE] src/app/api/invoices/route.ts — upload endpoint (size cap, rate limit, dedupe pre-dispatch, base64 data URL) — notes:
+- [DONE] src/app/api/invoices/[id]/confirm/route.ts — confirm endpoint with server-side currency guard — notes:
+- [DONE] src/app/api/invoices/[id]/route.ts — inline total-edit endpoint with atomic transaction update — notes:
+- [DONE] src/components/invoices/invoice-upload-form.tsx — wired upload control — notes:
+- [DONE] src/components/invoices/invoice-table.tsx — status badges, mismatch flag, multicurrency badge + disabled confirm, inline edit — notes:
+- [DONE] src/app/invoices/page.tsx — real filtered invoice list, upload form, no-data state, currency notice — notes:

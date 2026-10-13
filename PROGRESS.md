@@ -1,5 +1,5 @@
-Current focus: Section 3 Manual Transactions & Lists — manual entry submit (src/lib/transactions.ts)
-Remaining work: Item 3 (manual form + endpoint, transaction CRUD/filters, transactions page + delete), then Items 4–6
+Current focus: Item 4 Import/Export — not started (next session)
+Remaining work: Items 4 (CSV/XLSX import+column mapping+persistence, export), 5 (dashboard lib+page+chart), 6 (integration smoke tests); Item 3 fully DONE; src/app/page.tsx still the create-next-app template (Item 5 will replace)
 
 - [DONE] src/db/schema.ts — 3-table Drizzle schema (invoices, transactions, settings) + initial migration — notes:
 - [DONE] src/lib/db.ts — shared Turso/Drizzle singleton, PRAGMA foreign_keys = ON, globalThis-cached in dev — notes:
@@ -26,3 +26,9 @@ Remaining work: Item 3 (manual form + endpoint, transaction CRUD/filters, transa
 - [DONE] src/components/invoices/invoice-upload-form.tsx — wired upload control — notes:
 - [DONE] src/components/invoices/invoice-table.tsx — status badges, mismatch flag, multicurrency badge + disabled confirm, inline edit — notes:
 - [DONE] src/app/invoices/page.tsx — real filtered invoice list, upload form, no-data state, currency notice — notes:
+- [DONE] src/lib/transactions.ts — manual create (sign+default currency), filtered list, single-statement delete — notes:
+- [DONE] src/app/api/transactions/route.ts — manual create endpoint with Zod payload — notes:
+- [DONE] src/app/api/transactions/[id]/route.ts — delete endpoint — notes:
+- [DONE] src/components/transactions/manual-entry-form.tsx — wired manual entry with income/expense toggle — notes:
+- [DONE] src/components/transactions/transaction-table.tsx — signed/colored amounts, wired delete — notes:
+- [DONE] src/app/transactions/page.tsx — real filtered list, no-data state, manual form — notes:

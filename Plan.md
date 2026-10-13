@@ -8,4 +8,4 @@
 - Item 3 (Manual Transactions & Lists) — — pending — — —
 - Item 4 (Import / Export) — done — all Section 4 checklist items committed — none
 - Item 5 (Dashboard) — done — all Section 5 checklist items committed (chart + badge verified in prod build) — none
-- Item 6 (Integration Smoke Tests) — done — next build clean; live smoke: all pages 200, manual create → page/CSV → delete → CSV clean — none
+- Item 6 (Integration Smoke Tests) — done — next build clean; live smoke: all pages 200, manual create → page/CSV → delete → CSV clean; live invoice OCR: upload PNG → needs_review (vendor/date/total/currency extracted) → confirm → transaction -123400 HUF with correct category → CSV → cleanup — none

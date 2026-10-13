@@ -29,8 +29,11 @@ export type UpdateTotalResult =
   | { ok: true; invoice: InvoiceRow }
   | { ok: false; status: number; message: string };
 
-export function hashUploadContent(content: Buffer | ArrayBuffer): string {
-  const buffer = Buffer.isBuffer(content) ? content : Buffer.from(content);
+export function hashUploadContent(content: ArrayBuffer | ArrayBufferView): string {
+  const buffer =
+    content instanceof ArrayBuffer
+      ? Buffer.from(content)
+      : Buffer.from(content.buffer, content.byteOffset, content.byteLength);
   return createHash("sha256").update(buffer).digest("hex");
 }
 

@@ -33,7 +33,7 @@ export type ParsedInvoice = {
   totalMatchesLineItems: boolean;
 };
 
-function extractJsonPayload(raw: string): string {
+export function extractJsonPayload(raw: string): string {
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) {

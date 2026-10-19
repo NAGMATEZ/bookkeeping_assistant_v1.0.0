@@ -22,7 +22,7 @@ export function LanguageSelector() {
       <select
         value={locale}
         onChange={(event) => switchLocale(event.target.value as Locale)}
-        className="h-9 w-full max-w-xs rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus-visible:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+        className="h-9 w-full max-w-xs rounded-lg border border-input bg-white px-3 text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
       >
         {LOCALES.map((option) => (
           <option key={option} value={option}>

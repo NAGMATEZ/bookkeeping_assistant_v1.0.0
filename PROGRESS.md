@@ -1,46 +1,60 @@
-Current focus: Build complete — production build + end-to-end smoke passed
-Remaining work: none (all checklist sections DONE); user scratch file "Új szöveges dokumentum.txt" intentionally untracked
+Current focus: Version update complete - HU-default i18n, theme toggle, dashboard ranges, invoice net/VAT/gross + image editing, transactions import/export, and reset; tsc, vitest, lint, and next build green
+Remaining work: none; user scratch file "Új szöveges dokumentum.txt" intentionally untracked
 
-- [DONE] src/db/schema.ts — 3-table Drizzle schema (invoices, transactions, settings) + initial migration — notes:
-- [DONE] src/lib/db.ts — shared Turso/Drizzle singleton, PRAGMA foreign_keys = ON, globalThis-cached in dev — notes:
-- [DONE] drizzle.config.ts — drizzle-kit config (dialect: turso), committed in fdaed1f — notes:
-- [DONE] src/lib/money.ts — round-once minor-unit helpers, decimal parser, minor→decimal formatter — notes: SUBMISSION_NOTES.md #1
-- [DONE] src/lib/diagnostics.ts — redacting console.error logger + specific client failure messages — notes:
-- [DONE] src/lib/startup-gate.ts — env presence + real SELECT 1 check through shared db (mocked test) — notes:
-- [DONE] src/components/layout/guardrail-screen.tsx — startup failure screen — notes:
-- [DONE] src/components/layout/sidebar.tsx — click-to-toggle responsive sidebar (outside-click closes per spec) — notes: SUBMISSION_NOTES.md #2
-- [DONE] src/app/layout.tsx — async layout gates pages on checkStartup, renders sidebar or guardrail — notes:
-- [DONE] src/lib/encryption.ts — AES-256-GCM; encrypt() called by settings save route, decrypt() by llm dispatch — notes: SUBMISSION_NOTES.md #3
-- [DONE] src/lib/settings.ts — resolveSetting DB→env fallback + getOpeningBalanceMinor — notes: SUBMISSION_NOTES.md #4
-- [DONE] src/lib/llm.ts — primary/secondary dispatcher, single retry on network/429/invalid JSON, key decryption — notes:
-- [DONE] src/app/api/settings/route.ts — settings save endpoint (encrypts keys, converts opening balance, gates on startup) — notes:
-- [DONE] src/components/settings/settings-form.tsx — wired settings form, API keys never prefilled from server — notes:
-- [DONE] src/app/settings/page.tsx — real settings fetch, passes key-set flags only — notes:
-- [DONE] src/lib/dates.ts — 1900–2100 calendar validation + YYYYMMDD conversions (SUBMISSION_NOTES #5) — notes: SUBMISSION_NOTES.md #5
-- [DONE] src/lib/invoice-parse.ts — Zod contract, fence stripping, date/amount/currency sanity, line-item mismatch flag — notes:
-- [DONE] src/lib/upload-guard.ts — 15MB cap all types + 10/10min per-IP rate limiter — notes: SUBMISSION_NOTES.md #6
-- [DONE] src/lib/invoices.ts — hash dedupe, create/confirm/currency guard/total-edit via atomic batch, filtered list — notes: SUBMISSION_NOTES.md #7
-- [DONE] src/app/api/invoices/route.ts — upload endpoint (size cap, rate limit, dedupe pre-dispatch, base64 data URL) — notes:
-- [DONE] src/app/api/invoices/[id]/confirm/route.ts — confirm endpoint with server-side currency guard — notes:
-- [DONE] src/app/api/invoices/[id]/route.ts — inline total-edit endpoint with atomic transaction update — notes:
-- [DONE] src/components/invoices/invoice-upload-form.tsx — wired upload control — notes:
-- [DONE] src/components/invoices/invoice-table.tsx — status badges, mismatch flag, multicurrency badge + disabled confirm, inline edit — notes:
-- [DONE] src/app/invoices/page.tsx — real filtered invoice list, upload form, no-data state, currency notice — notes:
-- [DONE] src/lib/transactions.ts — manual create (sign+default currency), filtered list, single-statement delete — notes:
-- [DONE] src/app/api/transactions/route.ts — manual create endpoint with Zod payload — notes:
-- [DONE] src/app/api/transactions/[id]/route.ts — delete endpoint — notes:
-- [DONE] src/components/transactions/manual-entry-form.tsx — wired manual entry with income/expense toggle — notes:
-- [DONE] src/components/transactions/transaction-table.tsx — signed/colored amounts, wired delete — notes:
-- [DONE] src/app/transactions/page.tsx — real filtered list, no-data state, manual form — notes:
-- [DONE] src/lib/import-parse.ts — CSV (delimiter auto-detect, UTF-8/ISO-8859-2) + XLSX first-sheet parsers — notes:
-- [DONE] src/lib/import-map.ts — column mapping + direction precedence (sign < column < override) + skip reporting — notes: SUBMISSION_NOTES.md #8
-- [DONE] src/lib/import-persist.ts — mapped rows persisted in DEFAULT_CURRENCY, "Imported" category fallback — notes: SUBMISSION_NOTES.md #8
-- [DONE] src/lib/export.ts — semicolon CSV + native date/numeric XLSX — notes:
-- [DONE] src/app/api/import/preview/route.ts — 5-row preview + headers — notes:
-- [DONE] src/app/api/import/route.ts — full import with mapping/overrides, reported skips — notes:
-- [DONE] src/app/api/export/route.ts — CSV/XLSX downloads (format query) — notes:
-- [DONE] src/components/import/import-wizard.tsx — mapping selects, per-row overrides, wired Import All Rows — notes:
-- [DONE] src/app/import/page.tsx — wizard + real export download links — notes:
-- [DONE] src/lib/dashboard.ts — pending/net/position/3-month MA/projections + monthly buckets — notes:
-- [DONE] src/components/dashboard/projection-chart.tsx — recharts line with 30/60/90 projections — notes:
-- [DONE] src/app/page.tsx — real dashboard cards, chart, method badge, multicurrency notice, currency guardrail — notes:
+- [DONE] src/db/schema.ts - 3-table Drizzle schema (invoices, transactions, settings) with net/VAT/gross, content_hash, source_image/MIME, and transaction source - notes: SUBMISSION_NOTES.md #7
+- [DONE] drizzle/0001_version_update.sql - upgrade-in-place migration for the version-update columns and legacy data backfill - notes: SUBMISSION_NOTES.md #7
+- [DONE] src/lib/db.ts - shared Turso/Drizzle singleton, PRAGMA foreign_keys = ON, boot-time pending migrations - notes:
+- [DONE] drizzle.config.ts - drizzle-kit config (dialect: turso) - notes:
+- [DONE] src/lib/money.ts - round-once minor-unit helpers, Hungarian/English decimal parser, minor->decimal formatter - notes: SUBMISSION_NOTES.md #1
+- [DONE] src/lib/format.ts - locale-aware money formatting; HUF always hu-HU with symbol after - notes:
+- [DONE] src/lib/i18n.ts - HU/EN dictionaries (HU default), translate interpolation, locale guard - notes: SUBMISSION_NOTES.md #11
+- [DONE] src/lib/cookies.ts - client-safe locale/theme cookie names, max-age, Theme type - notes:
+- [DONE] src/lib/preferences.ts - async cookie locale/theme readers and localized metadata - notes:
+- [DONE] src/components/layout/i18n-provider.tsx - React context exposing locale and translator - notes:
+- [DONE] src/lib/diagnostics.ts - redacting console.error logger + specific client failure messages - notes:
+- [DONE] src/lib/startup-gate.ts - env presence + real SELECT 1 check through shared db - notes:
+- [DONE] src/components/layout/guardrail-screen.tsx - localized startup failure screen - notes:
+- [DONE] src/components/layout/sidebar.tsx - responsive nav with localized labels, theme toggle, language selector - notes:
+- [DONE] src/app/layout.tsx - cookie-driven lang/dark class, I18nProvider, startup guardrail - notes:
+- [DONE] src/lib/encryption.ts - AES-256-GCM; encrypt() called by settings save route, decrypt() by llm dispatch - notes: SUBMISSION_NOTES.md #3
+- [DONE] src/lib/settings.ts - resolveSetting DB/env fallback + getOpeningBalanceMinor - notes: SUBMISSION_NOTES.md #4
+- [DONE] src/lib/llm.ts - primary/secondary dispatcher, single retry on network/429/invalid JSON, key decryption - notes:
+- [DONE] src/app/api/settings/route.ts - settings save endpoint (encrypts keys, converts opening balance, primary required, secondary clearable) - notes:
+- [DONE] src/components/settings/settings-form.tsx - localized wired form; API keys never prefilled from server - notes:
+- [DONE] src/components/settings/language-selector.tsx - cookie-backed HU/EN selector - notes:
+- [DONE] src/components/settings/reset-panel.tsx - typed-confirmation delete-all-data control wired to /api/reset - notes: SUBMISSION_NOTES.md #14
+- [DONE] src/app/settings/page.tsx - real settings, language selector, reset panel, localized UI - notes:
+- [DONE] src/app/api/reset/route.ts - typed-confirmation endpoint that deletes transactions, invoices, settings - notes: SUBMISSION_NOTES.md #14
+- [DONE] src/lib/dates.ts - 1900-2100 calendar validation + YYYYMMDD conversions - notes: SUBMISSION_NOTES.md #5
+- [DONE] src/lib/invoice-parse.ts - Zod contract for net/VAT/gross major/minor inputs, 1e11 cap, zero-decimal correction, fence stripping, line-item consistency flag - notes: SUBMISSION_NOTES.md #9, #10
+- [DONE] src/lib/upload-guard.ts - 15MB cap all types + 10/10min per-IP rate limiter - notes: SUBMISSION_NOTES.md #6
+- [DONE] src/lib/invoices.ts - hash dedupe, create/confirm/currency guard/image lookup/delete, filtered list, net/VAT/gross editing synced to linked transaction - notes: SUBMISSION_NOTES.md #7
+- [DONE] src/app/api/invoices/route.ts - upload endpoint (size cap, rate limit, dedupe pre-dispatch, stored source bytes) - notes:
+- [DONE] src/app/api/invoices/[id]/confirm/route.ts - confirm endpoint with server-side currency guard - notes:
+- [DONE] src/app/api/invoices/[id]/route.ts - inline net/VAT/gross edit + delete endpoints - notes:
+- [DONE] src/app/api/invoices/[id]/image/route.ts - streams the stored source image with its MIME type - notes:
+- [DONE] src/components/invoices/invoice-upload-form.tsx - localized wired upload control - notes:
+- [DONE] src/components/invoices/invoice-table.tsx - net/VAT/gross columns, expandable editing, source image preview, delete, mismatch/multicurrency badges - notes: SUBMISSION_NOTES.md #13
+- [DONE] src/app/invoices/page.tsx - real filtered invoice list, upload form, no-data state, currency notice, localized UI - notes:
+- [DONE] src/lib/transactions.ts - manual create (source tag + explicit-sign override), filtered list, single-statement delete - notes:
+- [DONE] src/app/api/transactions/route.ts - manual create endpoint with Zod payload - notes:
+- [DONE] src/app/api/transactions/[id]/route.ts - delete endpoint - notes:
+- [DONE] src/components/transactions/manual-entry-form.tsx - localized wired entry with income/expense toggle and signed-amount override - notes:
+- [DONE] src/components/transactions/transaction-table.tsx - absolute colored amounts, source badges, wired delete - notes:
+- [DONE] src/app/transactions/page.tsx - real filtered list, manual form, import wizard, export links - notes:
+- [DONE] src/lib/import-parse.ts - CSV (delimiter auto-detect, UTF-8/ISO-8859-2) + XLSX first-sheet parsers - notes:
+- [DONE] src/lib/import-map.ts - column mapping + direction precedence (sign < column < override) + skip reporting - notes: SUBMISSION_NOTES.md #8
+- [DONE] src/lib/import-persist.ts - mapped rows persisted with csv/xlsx source in DEFAULT_CURRENCY - notes: SUBMISSION_NOTES.md #8
+- [DONE] src/lib/export.ts - semicolon CSV + native date/numeric XLSX - notes:
+- [DONE] src/app/api/import/preview/route.ts - 5-row preview + headers - notes:
+- [DONE] src/app/api/import/route.ts - full import with mapping/overrides, source from file extension, reported skips - notes:
+- [DONE] src/app/api/export/route.ts - CSV/XLSX downloads (format query) - notes:
+- [DONE] src/components/import/import-wizard.tsx - localized mapping selects, per-row overrides, wired Import All Rows - notes:
+- [DONE] src/app/import/page.tsx - redirects to /transactions where the import wizard now lives - notes:
+- [DONE] src/app/export/page.tsx - dedicated CSV/XLSX export page - notes:
+- [DONE] src/lib/dashboard.ts - pending/net/position/3-month MA/projections + configurable all-history monthly buckets - notes:
+- [DONE] src/components/dashboard/projection-chart.tsx - localized 6M/12M/all history range with 30/60/90 forecast horizon - notes:
+- [DONE] src/app/page.tsx - real dashboard cards, full-history chart, localized copy, multicurrency notice, currency guardrail - notes:
+- [DONE] tests/i18n-format.test.ts - localization key/interpolation and HUF formatting checks - notes:
+- [DONE] tests/migration-upgrade.test.ts - upgrade-in-place data preservation checks - notes:
+- [DONE] tests/reset-route.test.ts - reset confirmation and deletion-count checks - notes:

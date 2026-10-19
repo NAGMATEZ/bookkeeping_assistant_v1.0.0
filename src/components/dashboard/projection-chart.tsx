@@ -107,33 +107,90 @@ export function ProjectionChart({
           </div>
         </div>
       </div>
-      <div className="h-72 w-full">
+      <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-zinc-600 dark:text-zinc-400">
+        <span className="inline-flex items-center gap-2">
+          <svg width="28" height="8" aria-hidden="true">
+            <line x1="0" y1="4" x2="28" y2="4" stroke="var(--chart-line)" strokeWidth="2" />
+          </svg>
+          {t("dashboard.actual")}
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <svg width="28" height="8" aria-hidden="true">
+            <line
+              x1="0"
+              y1="4"
+              x2="28"
+              y2="4"
+              stroke="var(--chart-line)"
+              strokeWidth="2"
+              strokeDasharray="6 4"
+            />
+          </svg>
+          {t("dashboard.forecast")}
+        </span>
+      </div>
+      <p className="sr-only">
+        {t("dashboard.historyRange")}:{" "}
+        {visibleHistory
+          .map((point) => `${point.label}: ${formatMoney(point.value, currency, locale)}`)
+          .join(", ")}
+        . {t("dashboard.forecastRange")}:{" "}
+        {visibleForecast
+          .map((point) => `${point.label}: ${formatMoney(point.value, currency, locale)}`)
+          .join(", ")}
+        .
+      </p>
+      <div
+        className="h-72 w-full"
+        role="img"
+        aria-label={t("dashboard.positionProjections")}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
-            <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+            <XAxis
+              dataKey="label"
+              tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+              axisLine={{ stroke: "var(--chart-grid)" }}
+              tickLine={{ stroke: "var(--chart-grid)" }}
+            />
             <YAxis
               tickFormatter={(value: number) => formatMoney(value, currency, locale)}
               width={110}
-              tick={{ fontSize: 12 }}
+              tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+              axisLine={{ stroke: "var(--chart-grid)" }}
+              tickLine={{ stroke: "var(--chart-grid)" }}
             />
-            <Tooltip formatter={(value) => formatMoney(Number(value), currency, locale)} />
+            <Tooltip
+              formatter={(value) => formatMoney(Number(value), currency, locale)}
+              cursor={{ stroke: "var(--muted-foreground)" }}
+              contentStyle={{
+                backgroundColor: "var(--popover)",
+                borderColor: "var(--border)",
+                borderRadius: "0.5rem",
+                color: "var(--popover-foreground)",
+              }}
+              itemStyle={{ color: "var(--popover-foreground)" }}
+              labelStyle={{ color: "var(--muted-foreground)" }}
+            />
             <Line
               type="monotone"
               dataKey="value"
               name={t("dashboard.actual")}
-              stroke="#18181b"
+              stroke="var(--chart-line)"
               strokeWidth={2}
-              dot={{ r: 3 }}
+              dot={{ r: 3, fill: "var(--chart-line)", stroke: "var(--chart-line)" }}
+              activeDot={{ r: 5, fill: "var(--chart-line)", stroke: "var(--chart-line)" }}
             />
             <Line
               type="monotone"
               dataKey="forecast"
               name={t("dashboard.forecast")}
-              stroke="#18181b"
+              stroke="var(--chart-line)"
               strokeWidth={2}
               strokeDasharray="6 4"
-              dot={{ r: 3 }}
+              dot={{ r: 3, fill: "var(--chart-line)", stroke: "var(--chart-line)" }}
+              activeDot={{ r: 5, fill: "var(--chart-line)", stroke: "var(--chart-line)" }}
             />
           </LineChart>
         </ResponsiveContainer>

@@ -8,6 +8,13 @@
       "when": 1791879977073,
       "tag": "0000_nostalgic_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1792407152387,
+      "tag": "0001_version_update",
+      "breakpoints": true
     }
   ]
 }

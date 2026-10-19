@@ -36,6 +36,23 @@ export function monthKeysAfter(now: Date, count: number): string[] {
   return keys;
 }
 
+function monthKeysThrough(startKey: string, endKey: string): string[] {
+  const [startYear, startMonth] = startKey.split("-").map(Number);
+  const [endYear, endMonth] = endKey.split("-").map(Number);
+  const keys: string[] = [];
+  let year = startYear;
+  let month = startMonth;
+  while (year < endYear || (year === endYear && month <= endMonth)) {
+    keys.push(`${year}-${String(month).padStart(2, "0")}`);
+    month += 1;
+    if (month === 13) {
+      month = 1;
+      year += 1;
+    }
+  }
+  return keys;
+}
+
 function monthRange(dateIntStart: number, dateIntEnd: number) {
   return and(gte(transactions.date, dateIntStart), lte(transactions.date, dateIntEnd));
 }
@@ -53,7 +70,7 @@ function currentMonthBounds(now: Date): { first: number; last: number } {
 export function bucketMonthlySums(
   rows: Pick<TransactionRow, "date" | "amount_minor">[],
   now: Date,
-  count: number,
+  count: number | "all",
 ): MonthlyBucket[] {
   const currentKey = monthKeyOf(now.getUTCFullYear() * 10000 + (now.getUTCMonth() + 1) * 100 + 1);
   const buckets = new Map<string, number>();
@@ -61,7 +78,15 @@ export function bucketMonthlySums(
     const key = monthKeyOf(row.date);
     buckets.set(key, (buckets.get(key) ?? 0) + row.amount_minor);
   }
-  const keys = [...monthKeysBefore(now, count), currentKey];
+
+  let keys: string[];
+  if (count === "all") {
+    const earliest = [...buckets.keys()].filter((key) => key <= currentKey).sort()[0];
+    keys = earliest ? monthKeysThrough(earliest, currentKey) : [currentKey];
+  } else {
+    keys = [...monthKeysBefore(now, count), currentKey];
+  }
+
   return keys.map((month) => ({ month, netMinor: buckets.get(month) ?? 0 }));
 }
 
@@ -109,7 +134,7 @@ export async function getMovingAverageMinor(now: Date = new Date()): Promise<num
 
 export async function getMonthlyBuckets(
   now: Date = new Date(),
-  count = 6,
+  count: number | "all" = 6,
 ): Promise<MonthlyBucket[]> {
   const rows = await db
     .select({ date: transactions.date, amount_minor: transactions.amount_minor })

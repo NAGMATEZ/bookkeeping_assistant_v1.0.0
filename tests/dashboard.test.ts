@@ -111,6 +111,26 @@ describe("dashboard math", () => {
     expect(monthKeysAfter(new Date(Date.UTC(2025, 10, 15)), 3)).toEqual(["2025-12", "2026-01", "2026-02"]);
   });
 
+  it("returns every month from the earliest transaction through the current one", () => {
+    const buckets = bucketMonthlySums(
+      [
+        { date: 20251120, amount_minor: -100 },
+        { date: 20251205, amount_minor: 250 },
+        { date: 20260210, amount_minor: 50 },
+      ],
+      new Date(Date.UTC(2026, 1, 20)),
+      "all",
+    );
+
+    expect(buckets.map((bucket) => bucket.month)).toEqual([
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+    ]);
+    expect(buckets.map((bucket) => bucket.netMinor)).toEqual([-100, 250, 0, 50]);
+  });
+
   it("keeps month labels in sync with buckets across a year boundary", () => {
     const buckets = bucketMonthlySums(
       [

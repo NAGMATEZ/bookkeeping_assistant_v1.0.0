@@ -45,10 +45,14 @@ afterEach(() => {
 
 describe("POST /api/settings", () => {
   it("stores non-secret values and an encrypted API key", async () => {
-    const response = await post({ PRIMARY_BASE_URL: "https://api.test/v1", PRIMARY_API_KEY: "test-key" });
+    const response = await post({
+      PRIMARY_BASE_URL: "https://api.test/v1",
+      PRIMARY_MODEL: "vision-model",
+      PRIMARY_API_KEY: "test-key",
+    });
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ ok: true, updated: 2 });
+    await expect(response.json()).resolves.toEqual({ ok: true, updated: 3 });
     await expect(readSetting("PRIMARY_BASE_URL")).resolves.toBe("https://api.test/v1");
 
     const storedKey = await readSetting("PRIMARY_API_KEY");
@@ -64,13 +68,52 @@ describe("POST /api/settings", () => {
   });
 
   it("leaves the stored API key unchanged when an empty value is submitted", async () => {
-    await post({ PRIMARY_API_KEY: "keep-me" });
+    await post({
+      PRIMARY_BASE_URL: "https://api.test/v1",
+      PRIMARY_MODEL: "vision-model",
+      PRIMARY_API_KEY: "keep-me",
+    });
 
     const response = await post({ PRIMARY_API_KEY: "" });
 
     await expect(response.json()).resolves.toEqual({ ok: true, updated: 0 });
     const storedKey = await readSetting("PRIMARY_API_KEY");
     expect(decryptSecret(storedKey ?? "")).toBe("keep-me");
+  });
+
+  it("requires base URL, model, and key when any primary field is submitted", async () => {
+    await db.delete(settings).where(eq(settings.key, "PRIMARY_MODEL"));
+
+    const response = await post({ PRIMARY_BASE_URL: "https://api.test/v1" });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      message: "Primary model is required",
+    });
+  });
+
+  it("clears the optional secondary provider when its fields are emptied", async () => {
+    await post({
+      PRIMARY_BASE_URL: "https://api.test/v1",
+      PRIMARY_MODEL: "vision-model",
+      PRIMARY_API_KEY: "primary-key",
+      SECONDARY_BASE_URL: "https://backup.test/v1",
+      SECONDARY_MODEL: "backup-model",
+      SECONDARY_API_KEY: "backup-key",
+    });
+    expect(await readSetting("SECONDARY_BASE_URL")).toBe("https://backup.test/v1");
+
+    const response = await post({
+      SECONDARY_BASE_URL: "",
+      SECONDARY_MODEL: "",
+      SECONDARY_API_KEY: "",
+    });
+
+    expect(response.status).toBe(200);
+    await expect(readSetting("SECONDARY_BASE_URL")).resolves.toBeUndefined();
+    await expect(readSetting("SECONDARY_MODEL")).resolves.toBeUndefined();
+    await expect(readSetting("SECONDARY_API_KEY")).resolves.toBeUndefined();
   });
 
   it("rejects an unparseable opening balance without writing a row", async () => {

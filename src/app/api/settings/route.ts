@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { settings } from "@/db/schema";
@@ -14,7 +15,10 @@ import { checkStartup } from "@/lib/startup-gate";
  *   { PRIMARY_BASE_URL?, PRIMARY_MODEL?, PRIMARY_API_KEY?, SECONDARY_BASE_URL?, SECONDARY_MODEL?,
  *     SECONDARY_API_KEY?, DEFAULT_CURRENCY?, OPENING_BALANCE? }
  * - Non-empty string values are upserted into the settings table.
- * - *_API_KEY values are AES-256-GCM encrypted before storage; an empty/missing value leaves the stored key unchanged.
+ * - The primary provider is required: when any PRIMARY_* field is present, base URL, model, and an API key
+ *   (new or previously stored) must all exist, otherwise the save is rejected.
+ * - The secondary provider is clearable: an empty SECONDARY_* string deletes that stored key.
+ * - *_API_KEY values are AES-256-GCM encrypted before storage; an empty primary key leaves it unchanged.
  * - DEFAULT_CURRENCY must be a 3-letter ISO 4217 code.
  * - OPENING_BALANCE is a decimal string converted to minor units at this boundary and stored under
  *   OPENING_BALANCE_<DEFAULT_CURRENCY>.
@@ -36,6 +40,9 @@ const payloadSchema = z
     OPENING_BALANCE: z.string().optional(),
   })
   .strict();
+
+const PRIMARY_KEYS = ["PRIMARY_BASE_URL", "PRIMARY_MODEL", "PRIMARY_API_KEY"] as const;
+const SECONDARY_TEXT_KEYS = ["SECONDARY_BASE_URL", "SECONDARY_MODEL"] as const;
 
 function json(body: unknown, status = 200): Response {
   return Response.json(body, { status });
@@ -59,6 +66,23 @@ export async function POST(request: Request): Promise<Response> {
 
     const payload = parsed.data;
     const updates = new Map<string, string>();
+    const deletes = new Set<string>();
+
+    const primaryTouched = PRIMARY_KEYS.some((key) => payload[key] !== undefined);
+    if (primaryTouched) {
+      const checks = [
+        ["PRIMARY_BASE_URL", "Primary base URL"],
+        ["PRIMARY_MODEL", "Primary model"],
+        ["PRIMARY_API_KEY", "Primary API key"],
+      ] as const;
+      for (const [key, label] of checks) {
+        const submitted = payload[key]?.trim();
+        const resolved = submitted ? { value: submitted } : await resolveSetting(key);
+        if (!resolved?.value) {
+          return json({ ok: false, message: `${label} is required` }, 400);
+        }
+      }
+    }
 
     for (const key of [
       "PRIMARY_BASE_URL",
@@ -67,16 +91,27 @@ export async function POST(request: Request): Promise<Response> {
       "SECONDARY_MODEL",
       "DEFAULT_CURRENCY",
     ] as const) {
-      const value = payload[key]?.trim();
+      const submitted = payload[key];
+      if (submitted === undefined) {
+        continue;
+      }
+      const value = submitted.trim();
       if (value) {
         updates.set(key, value);
+      } else if ((SECONDARY_TEXT_KEYS as readonly string[]).includes(key)) {
+        deletes.add(key);
       }
     }
 
-    for (const key of ["PRIMARY_API_KEY", "SECONDARY_API_KEY"] as const) {
-      const value = payload[key];
-      if (value !== undefined && value !== "") {
-        updates.set(key, encryptSecret(value));
+    if (payload.PRIMARY_API_KEY !== undefined && payload.PRIMARY_API_KEY !== "") {
+      updates.set("PRIMARY_API_KEY", encryptSecret(payload.PRIMARY_API_KEY));
+    }
+
+    if (payload.SECONDARY_API_KEY !== undefined) {
+      if (payload.SECONDARY_API_KEY.trim() === "") {
+        deletes.add("SECONDARY_API_KEY");
+      } else {
+        updates.set("SECONDARY_API_KEY", encryptSecret(payload.SECONDARY_API_KEY));
       }
     }
 
@@ -101,18 +136,27 @@ export async function POST(request: Request): Promise<Response> {
       updates.set(`OPENING_BALANCE_${currency}`, String(minorUnits));
     }
 
+    if (deletes.size > 0) {
+      const [first, ...rest] = [...deletes].map((key) =>
+        db.delete(settings).where(eq(settings.key, key)),
+      );
+      if (first) {
+        await db.batch([first, ...rest]);
+      }
+    }
     if (updates.size > 0) {
-      const statements = [...updates].map(([key, value]) =>
+      const [first, ...rest] = [...updates].map(([key, value]) =>
         db
           .insert(settings)
           .values({ key, value })
           .onConflictDoUpdate({ target: settings.key, set: { value } }),
       );
-      const [first, ...rest] = statements;
-      await db.batch([first, ...rest]);
+      if (first) {
+        await db.batch([first, ...rest]);
+      }
     }
 
-    return json({ ok: true, updated: updates.size });
+    return json({ ok: true, updated: updates.size + deletes.size });
   } catch (error) {
     const failure = failureResponse("settings save", error, "Saving settings failed");
     return json({ ok: false, message: failure.message }, failure.status);

@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent } from "react";
 
+import { useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
+import type { MessageKey } from "@/lib/i18n";
 
 type FieldKey = "date" | "amount" | "description" | "category" | "project" | "direction";
 type Mapping = Record<FieldKey, number | "">;
@@ -14,13 +16,13 @@ type Preview = {
   totalRows: number;
 };
 
-const FIELD_LABELS: Record<FieldKey, string> = {
-  date: "Date",
-  amount: "Amount",
-  description: "Description",
-  category: "Category",
-  project: "Project",
-  direction: "Direction (optional)",
+const FIELD_LABEL_KEYS: Record<FieldKey, MessageKey> = {
+  date: "import.date",
+  amount: "import.amount",
+  description: "import.description",
+  category: "import.category",
+  project: "import.project",
+  direction: "import.direction",
 };
 
 const REQUIRED_FIELDS: FieldKey[] = ["date", "amount"];
@@ -58,6 +60,7 @@ function suggestMapping(headers: string[]): Mapping {
 
 export function ImportWizard() {
   const router = useRouter();
+  const t = useT();
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [mapping, setMapping] = useState<Mapping>(EMPTY_MAPPING);
@@ -80,13 +83,21 @@ export function ImportWizard() {
       const response = await fetch("/api/import/preview", { method: "POST", body: form });
       const body = (await response.json().catch(() => null)) as (Preview & { ok?: boolean; message?: string }) | null;
       if (!response.ok || body?.ok !== true) {
-        setFeedback({ kind: "error", message: body?.message ?? `Preview failed with HTTP ${response.status}` });
+        setFeedback({
+          kind: "error",
+          message: body?.message ?? t("import.previewFailedHttp", { status: response.status }),
+        });
         return;
       }
       setPreview({ headers: body.headers, rows: body.rows, totalRows: body.totalRows });
       setMapping(suggestMapping(body.headers));
     } catch (error) {
-      setFeedback({ kind: "error", message: error instanceof Error ? `Preview failed: ${error.message}` : "Preview failed" });
+      setFeedback({
+        kind: "error",
+        message: t("import.previewFailed", {
+          detail: error instanceof Error ? error.message : t("errors.unknown"),
+        }),
+      });
     } finally {
       setBusy(null);
     }
@@ -96,7 +107,12 @@ export function ImportWizard() {
     if (!file || !preview) return;
     const missing = REQUIRED_FIELDS.filter((field) => mapping[field] === "");
     if (missing.length > 0) {
-      setFeedback({ kind: "error", message: `Map these required columns first: ${missing.join(", ")}` });
+      setFeedback({
+        kind: "error",
+        message: t("import.mapRequired", {
+          fields: missing.map((field) => t(FIELD_LABEL_KEYS[field])).join(", "),
+        }),
+      });
       return;
     }
 
@@ -126,7 +142,10 @@ export function ImportWizard() {
       } | null;
 
       if (!response.ok || body?.ok !== true) {
-        setFeedback({ kind: "error", message: body?.message ?? `Import failed with HTTP ${response.status}` });
+        setFeedback({
+          kind: "error",
+          message: body?.message ?? t("import.importFailedHttp", { status: response.status }),
+        });
         return;
       }
 
@@ -135,23 +154,38 @@ export function ImportWizard() {
         kind: "success",
         message:
           skipped.length === 0
-            ? `Imported ${body.inserted ?? 0} rows.`
-            : `Imported ${body.inserted ?? 0} rows. Skipped ${skipped.length}: ${skipped
-                .map((row) => `row ${row.rowIndex + 1} (${row.reason})`)
-                .join("; ")}`,
+            ? t("import.imported", { count: body.inserted ?? 0 })
+            : t("import.importedWithSkips", {
+                count: body.inserted ?? 0,
+                skipped: skipped.length,
+                details: skipped
+                  .map((row) =>
+                    t("import.rowDetail", { row: row.rowIndex + 1, reason: row.reason }),
+                  )
+                  .join("; "),
+              }),
       });
       router.refresh();
     } catch (error) {
-      setFeedback({ kind: "error", message: error instanceof Error ? `Import failed: ${error.message}` : "Import failed" });
+      setFeedback({
+        kind: "error",
+        message: t("import.importFailed", {
+          detail: error instanceof Error ? error.message : t("errors.unknown"),
+        }),
+      });
     } finally {
       setBusy(null);
     }
   }
 
+  function headerLabel(header: string, index: number): string {
+    return header || t("import.columnFallback", { index: index + 1 });
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <label className="flex flex-col gap-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Import file (.csv, .xlsx, .xls)
+        {t("import.fileLabel")}
         <input
           type="file"
           accept=".csv,.xlsx,.xls"
@@ -160,14 +194,14 @@ export function ImportWizard() {
         />
       </label>
 
-      {busy === "preview" && <p className="text-sm text-zinc-500">Reading file…</p>}
+      {busy === "preview" && <p className="text-sm text-zinc-500">{t("import.reading")}</p>}
 
       {preview && (
         <>
           <div className="grid gap-3 sm:grid-cols-3">
-            {(Object.keys(FIELD_LABELS) as FieldKey[]).map((field) => (
+            {(Object.keys(FIELD_LABEL_KEYS) as FieldKey[]).map((field) => (
               <label key={field} className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                {FIELD_LABELS[field]}
+                {t(FIELD_LABEL_KEYS[field])}
                 <select
                   value={mapping[field]}
                   onChange={(event) =>
@@ -178,10 +212,10 @@ export function ImportWizard() {
                   }
                   className="h-9 rounded-lg border border-zinc-200 bg-white px-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                 >
-                  <option value="">— none —</option>
+                  <option value="">{t("common.none")}</option>
                   {preview.headers.map((header, index) => (
                     <option key={`${header}-${index}`} value={index}>
-                      {header || `Column ${index + 1}`}
+                      {headerLabel(header, index)}
                     </option>
                   ))}
                 </select>
@@ -190,21 +224,20 @@ export function ImportWizard() {
           </div>
 
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            Previewing the first {preview.rows.length} of {preview.totalRows} rows. Toggle a row direction to
-            override the sign/direction column for that row.
+            {t("import.previewInfo", { shown: preview.rows.length, total: preview.totalRows })}
           </p>
 
           <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-zinc-200 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
-                  <th className="px-3 py-2">#</th>
+                  <th className="px-3 py-2">{t("import.rowNumber")}</th>
                   {preview.headers.map((header, index) => (
                     <th key={`${header}-${index}`} className="px-3 py-2">
-                      {header || `Column ${index + 1}`}
+                      {headerLabel(header, index)}
                     </th>
                   ))}
-                  <th className="px-3 py-2">Direction override</th>
+                  <th className="px-3 py-2">{t("import.directionOverride")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -230,7 +263,7 @@ export function ImportWizard() {
                                 : "text-zinc-500"
                             }`}
                           >
-                            Income
+                            {t("common.income")}
                           </button>
                           <button
                             type="button"
@@ -242,7 +275,7 @@ export function ImportWizard() {
                                 : "text-zinc-500"
                             }`}
                           >
-                            Expense
+                            {t("common.expense")}
                           </button>
                         </div>
                       </td>
@@ -255,7 +288,9 @@ export function ImportWizard() {
 
           <div className="flex items-center gap-3">
             <Button type="button" onClick={handleImport} disabled={busy === "import"}>
-              {busy === "import" ? "Importing…" : `Import All ${preview.totalRows} Rows`}
+              {busy === "import"
+                ? t("import.importing")
+                : t("import.importAll", { count: preview.totalRows })}
             </Button>
             {feedback?.kind === "success" && (
               <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">

@@ -61,7 +61,7 @@ export function ResetPanel() {
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
             autoComplete="off"
-            className="h-9 w-44 rounded-lg border border-zinc-200 bg-white px-3 font-mono text-sm text-zinc-900 outline-none focus-visible:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+            className="h-9 w-44 rounded-lg border border-input bg-white px-3 font-mono text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
           />
         </label>
         <Button
@@ -73,7 +73,7 @@ export function ResetPanel() {
           {status.kind === "busy" ? t("settings.resetting") : t("settings.resetButton")}
         </Button>
         {status.kind === "success" && (
-          <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+          <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
             {status.message}
           </p>
         )}

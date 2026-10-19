@@ -194,7 +194,11 @@ export function ImportWizard() {
         />
       </label>
 
-      {busy === "preview" && <p className="text-sm text-zinc-500">{t("import.reading")}</p>}
+      {busy === "preview" && (
+        <p role="status" className="text-sm text-zinc-500 dark:text-zinc-400">
+          {t("import.reading")}
+        </p>
+      )}
 
       {preview && (
         <>
@@ -210,7 +214,7 @@ export function ImportWizard() {
                       [field]: event.target.value === "" ? "" : Number(event.target.value),
                     }))
                   }
-                  className="h-9 rounded-lg border border-zinc-200 bg-white px-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  className="h-9 rounded-lg border border-input bg-white px-2 text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
                 >
                   <option value="">{t("common.none")}</option>
                   {preview.headers.map((header, index) => (
@@ -227,8 +231,14 @@ export function ImportWizard() {
             {t("import.previewInfo", { shown: preview.rows.length, total: preview.totalRows })}
           </p>
 
-          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+          <div
+            className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+            role="region"
+            aria-label={t("common.dataTable")}
+            tabIndex={0}
+          >
             <table className="w-full border-collapse text-sm">
+              <caption className="sr-only">{t("import.fileLabel")}</caption>
               <thead>
                 <tr className="border-b border-zinc-200 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
                   <th className="px-3 py-2">{t("import.rowNumber")}</th>
@@ -245,14 +255,18 @@ export function ImportWizard() {
                   const override = overrides[rowIndex];
                   return (
                     <tr key={rowIndex} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/60">
-                      <td className="px-3 py-2 text-zinc-500">{rowIndex + 1}</td>
+                      <td className="px-3 py-2 text-zinc-500 dark:text-zinc-400">{rowIndex + 1}</td>
                       {row.map((cell, cellIndex) => (
                         <td key={cellIndex} className="max-w-[12rem] truncate px-3 py-2 text-zinc-700 dark:text-zinc-300">
                           {cell}
                         </td>
                       ))}
                       <td className="px-3 py-2">
-                        <div className="flex items-center gap-1">
+                        <div
+                          role="group"
+                          aria-label={`${t("import.directionOverride")} - ${rowIndex + 1}`}
+                          className="flex items-center gap-1"
+                        >
                           <button
                             type="button"
                             aria-pressed={override === true}
@@ -260,7 +274,7 @@ export function ImportWizard() {
                             className={`rounded px-2 py-0.5 text-xs font-medium ${
                               override === true
                                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
-                                : "text-zinc-500"
+                                : "text-zinc-500 dark:text-zinc-400"
                             }`}
                           >
                             {t("common.income")}
@@ -272,7 +286,7 @@ export function ImportWizard() {
                             className={`rounded px-2 py-0.5 text-xs font-medium ${
                               override === false
                                 ? "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300"
-                                : "text-zinc-500"
+                                : "text-zinc-500 dark:text-zinc-400"
                             }`}
                           >
                             {t("common.expense")}
@@ -293,7 +307,7 @@ export function ImportWizard() {
                 : t("import.importAll", { count: preview.totalRows })}
             </Button>
             {feedback?.kind === "success" && (
-              <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
                 {feedback.message}
               </p>
             )}

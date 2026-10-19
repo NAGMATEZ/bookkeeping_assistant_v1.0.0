@@ -85,7 +85,7 @@ export function InvoiceUploadForm() {
         <span className="text-xs text-zinc-500 dark:text-zinc-400">{t("invoices.uploadHint")}</span>
       </div>
       {status.kind === "success" && (
-        <p role="status" className="text-sm font-medium text-emerald-600 sm:ml-2 dark:text-emerald-400">
+        <p role="status" className="text-sm font-medium text-emerald-700 sm:ml-2 dark:text-emerald-400">
           {status.message}
         </p>
       )}

@@ -30,7 +30,7 @@ export default async function ExportPage() {
         <a
           href="/api/export?format=xlsx"
           download
-          className="inline-flex h-10 items-center rounded-lg border border-zinc-200 px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="inline-flex h-10 items-center rounded-lg border border-input px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           {translate(locale, "export.downloadXlsx")}
         </a>

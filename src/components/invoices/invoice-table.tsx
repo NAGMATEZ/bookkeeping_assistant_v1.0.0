@@ -29,7 +29,7 @@ type Feedback = { kind: "error" | "success"; message: string } | null;
 type Draft = { net: string; vat: string; gross: string };
 
 const AMOUNT_INPUT =
-  "h-8 w-28 rounded-lg border border-zinc-200 bg-white px-2 text-right text-sm text-zinc-900 outline-none focus-visible:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
+  "h-8 w-28 rounded-lg border border-input bg-white px-2 text-right text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50";
 
 function draftMismatch(draft: Draft): boolean {
   const toNumber = (value: string) => Number(value.replace(",", "."));
@@ -196,15 +196,21 @@ export function InvoiceTable({
           role={feedback.kind === "error" ? "alert" : "status"}
           className={cn(
             "text-sm font-medium",
-            feedback.kind === "error" ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400",
+            feedback.kind === "error" ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400",
           )}
         >
           {feedback.message}
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div
+        className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+        role="region"
+        aria-label={t("common.dataTable")}
+        tabIndex={0}
+      >
         <table className="w-full min-w-[68rem] border-collapse text-sm">
+          <caption className="sr-only">{t("invoices.title")}</caption>
           <thead>
             <tr className="border-b border-zinc-200 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
               <th className="px-4 py-3">{t("common.date")}</th>
@@ -299,6 +305,7 @@ export function InvoiceTable({
                         variant="outline"
                         size="sm"
                         aria-expanded={expanded}
+                        aria-controls={`invoice-details-${row.id}`}
                         aria-label={expanded ? t("invoices.collapse") : t("invoices.expand")}
                         onClick={() => setExpandedId(expanded ? null : row.id)}
                       >
@@ -325,7 +332,11 @@ export function InvoiceTable({
               const draft = draftFor(row);
               const sourceShown = showSource[row.id] === true;
               return (
-                <tr key={`${row.id}-details`} className="border-b border-zinc-100 bg-zinc-50/70 last:border-0 dark:border-zinc-800/60 dark:bg-zinc-950/40">
+                <tr
+                  key={`${row.id}-details`}
+                  id={`invoice-details-${row.id}`}
+                  className="border-b border-zinc-100 bg-zinc-50/70 last:border-0 dark:border-zinc-800/60 dark:bg-zinc-950/40"
+                >
                   <td colSpan={8} className="px-4 py-5">
                     <div className="grid gap-6 lg:grid-cols-2">
                       <form onSubmit={(event) => saveAmounts(event, row)} className="space-y-3">

@@ -77,15 +77,19 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
     event.preventDefault();
     setStatus({ kind: "saving" });
 
-    const payload: Record<string, string> = {};
-    if (primaryBaseUrl.trim()) payload.PRIMARY_BASE_URL = primaryBaseUrl.trim();
-    if (primaryModel.trim()) payload.PRIMARY_MODEL = primaryModel.trim();
-    if (secondaryBaseUrl.trim()) payload.SECONDARY_BASE_URL = secondaryBaseUrl.trim();
-    if (secondaryModel.trim()) payload.SECONDARY_MODEL = secondaryModel.trim();
+    const payload: Record<string, string> = {
+      PRIMARY_BASE_URL: primaryBaseUrl.trim(),
+      PRIMARY_MODEL: primaryModel.trim(),
+      SECONDARY_BASE_URL: secondaryBaseUrl.trim(),
+      SECONDARY_MODEL: secondaryModel.trim(),
+    };
     if (defaultCurrency.trim()) payload.DEFAULT_CURRENCY = defaultCurrency.trim().toUpperCase();
     if (openingBalance.trim()) payload.OPENING_BALANCE = openingBalance.trim();
     if (primaryApiKey !== "") payload.PRIMARY_API_KEY = primaryApiKey;
-    if (secondaryApiKey !== "") payload.SECONDARY_API_KEY = secondaryApiKey;
+    // Empty secondary fields clear the optional fallback provider, including its stored key.
+    if (secondaryApiKey !== "" || (secondaryBaseUrl.trim() === "" && secondaryModel.trim() === "")) {
+      payload.SECONDARY_API_KEY = secondaryApiKey;
+    }
 
     try {
       const response = await fetch("/api/settings", {
@@ -134,13 +138,13 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
           value={primaryApiKey}
           onChange={setPrimaryApiKey}
           placeholder={primaryApiKeySet ? "•••••••• (saved)" : "Not set"}
-          hint="Stored AES-256-GCM encrypted. Leave empty to keep the saved key."
+          hint="Required. Stored AES-256-GCM encrypted. Leave empty to keep the saved key."
         />
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
         <legend className="text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
-          Secondary LLM provider
+          Secondary LLM provider (optional)
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField label="Base URL" value={secondaryBaseUrl} onChange={setSecondaryBaseUrl} placeholder="https://api.example.com/v1" />
@@ -153,7 +157,7 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
           value={secondaryApiKey}
           onChange={setSecondaryApiKey}
           placeholder={secondaryApiKeySet ? "•••••••• (saved)" : "Not set"}
-          hint="Stored AES-256-GCM encrypted. Leave empty to keep the saved key."
+          hint="Optional fallback. Clear all secondary fields to remove it; an empty key keeps the saved one."
         />
       </fieldset>
 

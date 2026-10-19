@@ -23,7 +23,7 @@ type Status =
   | { kind: "error"; message: string };
 
 const INPUT_CLASS =
-  "h-9 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus-visible:border-zinc-400 focus-visible:ring-2 focus-visible:ring-zinc-200 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus-visible:ring-zinc-700";
+  "h-9 w-full rounded-lg border border-input bg-white px-3 text-sm text-zinc-900 transition-colors placeholder:text-zinc-500 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400";
 
 function TextField({
   label,
@@ -212,7 +212,7 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
           {status.kind === "saving" ? t("common.saving") : t("settings.save")}
         </Button>
         {status.kind === "success" && (
-          <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+          <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
             {status.message}
           </p>
         )}

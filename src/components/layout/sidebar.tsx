@@ -82,8 +82,9 @@ export function Sidebar({ initialTheme }: { initialTheme: Theme }) {
         type="button"
         aria-label={open ? t("nav.close") : t("nav.open")}
         aria-expanded={open}
+        aria-controls="app-sidebar"
         onClick={() => setOpen((value) => !value)}
-        className="fixed top-3 left-3 z-[60] flex size-9 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:outline-none dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+        className="fixed top-3 left-3 z-[60] flex size-9 items-center justify-center rounded-lg border border-input bg-white text-zinc-700 shadow-sm transition-colors hover:bg-zinc-100 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
       >
         {open ? <X className="size-5" aria-hidden="true" /> : <Menu className="size-5" aria-hidden="true" />}
       </button>
@@ -98,8 +99,10 @@ export function Sidebar({ initialTheme }: { initialTheme: Theme }) {
       )}
 
       <aside
+        id="app-sidebar"
         data-testid="sidebar"
         aria-label={t("nav.main")}
+        inert={!open}
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col overflow-hidden border-r border-zinc-200 bg-white transition-transform duration-200 dark:border-zinc-800 dark:bg-zinc-900",
           "lg:static lg:z-auto",
@@ -128,7 +131,7 @@ export function Sidebar({ initialTheme }: { initialTheme: Theme }) {
               onClick={toggleTheme}
               aria-label={t("nav.toggleTheme")}
               title={theme === "dark" ? t("nav.lightTheme") : t("nav.darkTheme")}
-              className="flex size-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="flex size-9 items-center justify-center rounded-lg border border-input text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               {theme === "dark" ? <Sun className="size-4" aria-hidden="true" /> : <Moon className="size-4" aria-hidden="true" />}
             </button>
@@ -138,7 +141,7 @@ export function Sidebar({ initialTheme }: { initialTheme: Theme }) {
                 aria-label={t("common.language")}
                 value={locale}
                 onChange={(event) => switchLocale(event.target.value as Locale)}
-                className="h-9 w-full rounded-lg border border-zinc-200 bg-white px-2 text-xs text-zinc-900 outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                className="h-9 w-full rounded-lg border border-input bg-white px-2 text-xs text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
               >
                 <option value="hu">{t("common.hungarian")}</option>
                 <option value="en">{t("common.english")}</option>

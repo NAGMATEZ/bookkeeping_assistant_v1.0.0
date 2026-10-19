@@ -75,8 +75,14 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
           {feedback}
         </p>
       )}
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <div
+        className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+        role="region"
+        aria-label={t("common.dataTable")}
+        tabIndex={0}
+      >
         <table className="w-full min-w-[52rem] border-collapse text-sm">
+          <caption className="sr-only">{t("transactions.title")}</caption>
           <thead>
             <tr className="border-b border-zinc-200 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
               <th className="px-4 py-3">{t("common.date")}</th>
@@ -85,7 +91,9 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
               <th className="px-4 py-3">{t("common.project")}</th>
               <th className="px-4 py-3">{t("common.description")}</th>
               <th className="px-4 py-3">{t("common.source")}</th>
-              <th className="px-4 py-3" />
+              <th className="px-4 py-3">
+                <span className="sr-only">{t("common.actions")}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -97,9 +105,10 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
                   <td
                     className={cn(
                       "px-4 py-3 whitespace-nowrap font-semibold tabular-nums",
-                      positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+                      positive ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
                     )}
                   >
+                    {positive ? "+" : "-"}
                     {formatMoneyAbsolute(row.amountMinor, row.currencyCode, locale)}
                   </td>
                   <td className="px-4 py-3 text-zinc-900 dark:text-zinc-50">{row.category}</td>

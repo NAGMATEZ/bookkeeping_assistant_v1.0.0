@@ -1,5 +1,8 @@
+import { resolve } from "node:path";
+
 import { createClient, type Client } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 
 import * as schema from "@/db/schema";
 
@@ -21,7 +24,15 @@ async function createInstance(): Promise<DatabaseInstance> {
   const client = createClient({ url, authToken });
   await client.execute("PRAGMA foreign_keys = ON");
 
-  return { client, db: drizzle(client, { schema }) };
+  const database = drizzle(client, { schema });
+
+  // Apply pending Drizzle migrations on boot so an existing database upgrades in place.
+  // Tests run their own migrations against isolated in-memory databases.
+  if (process.env.NODE_ENV !== "test" && process.env.NEXT_PHASE !== "phase-production-build") {
+    await migrate(database, { migrationsFolder: resolve(process.cwd(), "drizzle") });
+  }
+
+  return { client, db: database };
 }
 
 const globalForDb = globalThis as unknown as {

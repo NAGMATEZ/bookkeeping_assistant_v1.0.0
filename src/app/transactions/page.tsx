@@ -21,7 +21,7 @@ type TransactionSearchParams = {
 };
 
 const INPUT_CLASS =
-  "h-9 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 outline-none focus-visible:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
+  "h-9 rounded-lg border border-input bg-white px-3 text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50";
 
 export default async function TransactionsPage({
   searchParams,
@@ -99,7 +99,7 @@ export default async function TransactionsPage({
         </button>
         <Link
           href="/transactions"
-          className="h-9 rounded-lg border border-zinc-200 px-3 text-sm font-medium leading-9 text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="h-9 rounded-lg border border-input px-3 text-sm font-medium leading-9 text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           {translate(locale, "common.clear")}
         </Link>
@@ -136,7 +136,7 @@ export default async function TransactionsPage({
           <a
             href="/api/export?format=xlsx"
             download
-            className="inline-flex h-9 items-center rounded-lg border border-zinc-200 px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="inline-flex h-9 items-center rounded-lg border border-input px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             {translate(locale, "transactions.downloadXlsx")}
           </a>

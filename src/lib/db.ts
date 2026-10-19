@@ -5,6 +5,7 @@ import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 
 import * as schema from "@/db/schema";
+import { ensureLegacyMigrationBaseline } from "@/lib/migrations";
 
 export type Database = LibSQLDatabase<typeof schema>;
 
@@ -29,7 +30,9 @@ async function createInstance(): Promise<DatabaseInstance> {
   // Apply pending Drizzle migrations on boot so an existing database upgrades in place.
   // Tests run their own migrations against isolated in-memory databases.
   if (process.env.NODE_ENV !== "test" && process.env.NEXT_PHASE !== "phase-production-build") {
-    await migrate(database, { migrationsFolder: resolve(process.cwd(), "drizzle") });
+    const migrationsFolder = resolve(process.cwd(), "drizzle");
+    await ensureLegacyMigrationBaseline(client, migrationsFolder);
+    await migrate(database, { migrationsFolder });
   }
 
   return { client, db: database };

@@ -3,8 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { useLocale, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
-import { minorUnitsToDecimal } from "@/lib/money";
+import { formatMoneyAbsolute } from "@/lib/format";
+import type { MessageKey } from "@/lib/i18n";
+import type { TransactionSource } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 export type TransactionTableRow = {
@@ -15,16 +18,32 @@ export type TransactionTableRow = {
   category: string;
   project: string;
   description: string;
+  source: TransactionSource;
   sourceInvoiceId: string | null;
+};
+
+const SOURCE_KEYS: Record<TransactionSource, MessageKey> = {
+  manual: "transactions.sourceManual",
+  csv: "transactions.sourceCsv",
+  xlsx: "transactions.sourceXlsx",
+  invoice: "transactions.sourceInvoice",
 };
 
 export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
   const router = useRouter();
+  const t = useT();
+  const locale = useLocale();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   async function remove(row: TransactionTableRow) {
-    if (!window.confirm(`Delete the ${minorUnitsToDecimal(row.amountMinor)} ${row.currencyCode} ${row.category} transaction?`)) {
+    const confirmed = window.confirm(
+      t("transactions.deleteConfirm", {
+        amount: formatMoneyAbsolute(row.amountMinor, row.currencyCode, locale),
+        category: row.category,
+      }),
+    );
+    if (!confirmed) {
       return;
     }
 
@@ -34,12 +53,16 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
       const response = await fetch(`/api/transactions/${row.id}`, { method: "DELETE" });
       const body = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
       if (!response.ok || body?.ok !== true) {
-        setFeedback(body?.message ?? `Delete failed with HTTP ${response.status}`);
+        setFeedback(body?.message ?? t("transactions.deleteFailedHttp", { status: response.status }));
         return;
       }
       router.refresh();
     } catch (error) {
-      setFeedback(error instanceof Error ? `Delete failed: ${error.message}` : "Delete failed");
+      setFeedback(
+        t("transactions.deleteFailed", {
+          detail: error instanceof Error ? error.message : t("errors.unknown"),
+        }),
+      );
     } finally {
       setPendingId(null);
     }
@@ -56,43 +79,44 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
         <table className="w-full min-w-[52rem] border-collapse text-sm">
           <thead>
             <tr className="border-b border-zinc-200 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Project</th>
-              <th className="px-4 py-3">Description</th>
-              <th className="px-4 py-3">Source</th>
+              <th className="px-4 py-3">{t("common.date")}</th>
+              <th className="px-4 py-3">{t("common.amount")}</th>
+              <th className="px-4 py-3">{t("common.category")}</th>
+              <th className="px-4 py-3">{t("common.project")}</th>
+              <th className="px-4 py-3">{t("common.description")}</th>
+              <th className="px-4 py-3">{t("common.source")}</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => {
               const positive = row.amountMinor >= 0;
-              const signed = `${positive ? "+" : "-"}${minorUnitsToDecimal(Math.abs(row.amountMinor))}`;
               return (
                 <tr key={row.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/60">
                   <td className="px-4 py-3 whitespace-nowrap text-zinc-700 dark:text-zinc-300">{row.date}</td>
                   <td
                     className={cn(
-                      "px-4 py-3 whitespace-nowrap font-medium tabular-nums",
+                      "px-4 py-3 whitespace-nowrap font-semibold tabular-nums",
                       positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
                     )}
                   >
-                    {signed} {row.currencyCode}
+                    {formatMoneyAbsolute(row.amountMinor, row.currencyCode, locale)}
                   </td>
                   <td className="px-4 py-3 text-zinc-900 dark:text-zinc-50">{row.category}</td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
                     <span className="block max-w-[10rem] truncate" title={row.project}>
-                      {row.project || "—"}
+                      {row.project || t("common.dash")}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
                     <span className="block max-w-[16rem] truncate" title={row.description}>
-                      {row.description || "—"}
+                      {row.description || t("common.dash")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-zinc-500 dark:text-zinc-400">
-                    {row.sourceInvoiceId ? "Invoice" : "Manual"}
+                  <td className="px-4 py-3">
+                    <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                      {t(SOURCE_KEYS[row.source])}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Button
@@ -102,7 +126,7 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
                       disabled={pendingId === row.id}
                       onClick={() => remove(row)}
                     >
-                      Delete
+                      {t("common.delete")}
                     </Button>
                   </td>
                 </tr>

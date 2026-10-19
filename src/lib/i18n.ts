@@ -44,6 +44,7 @@ const hu = {
   "common.loading": "Betöltés…",
   "common.dash": "—",
   "common.remove": "Eltávolítás",
+  "common.dataTable": "Adattábla",
 
   "nav.dashboard": "Dashboard",
   "nav.invoices": "Számlák",
@@ -57,6 +58,7 @@ const hu = {
   "nav.lightTheme": "Világos téma",
   "nav.darkTheme": "Sötét téma",
   "nav.theme": "Téma",
+  "nav.skipToContent": "Ugrás a tartalomra",
 
   "guardrail.title": "Beállítás szükséges",
   "guardrail.body": "A könyvelő asszisztens nem tud elindulni, mert a indítási ellenőrzések nem sikerültek.",
@@ -307,6 +309,7 @@ const en: Record<MessageKey, string> = {
   "common.loading": "Loading…",
   "common.dash": "—",
   "common.remove": "Remove",
+  "common.dataTable": "Data table",
 
   "nav.dashboard": "Dashboard",
   "nav.invoices": "Invoices",
@@ -320,6 +323,7 @@ const en: Record<MessageKey, string> = {
   "nav.lightTheme": "Light theme",
   "nav.darkTheme": "Dark theme",
   "nav.theme": "Theme",
+  "nav.skipToContent": "Skip to content",
 
   "guardrail.title": "Setup required",
   "guardrail.body": "The bookkeeping assistant cannot start because its startup checks failed.",

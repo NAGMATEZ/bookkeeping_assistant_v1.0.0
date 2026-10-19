@@ -4,13 +4,15 @@ import Link from "next/link";
 import { InvoiceTable, type InvoiceTableRow } from "@/components/invoices/invoice-table";
 import { InvoiceUploadForm } from "@/components/invoices/invoice-upload-form";
 import { fromDateInt } from "@/lib/dates";
+import { translate } from "@/lib/i18n";
 import { lineItemsMatchTotal } from "@/lib/invoice-parse";
 import { listInvoices } from "@/lib/invoices";
+import { getLocale, localizedMetadata } from "@/lib/preferences";
 import { resolveSetting } from "@/lib/settings";
 
-export const metadata: Metadata = {
-  title: "Invoices — Bookkeeping Assistant",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata("meta.invoices");
+}
 
 type InvoiceSearchParams = {
   status?: string;
@@ -27,6 +29,7 @@ export default async function InvoicesPage({
   searchParams: Promise<InvoiceSearchParams>;
 }) {
   const params = await searchParams;
+  const locale = await getLocale();
   const status =
     params.status === "needs_review" || params.status === "confirmed" ? params.status : undefined;
   const project = params.project?.trim() || undefined;
@@ -44,26 +47,32 @@ export default async function InvoicesPage({
     vendor: row.vendor,
     project: row.project,
     totalMinor: row.total_minor,
+    netMinor: row.net_minor,
+    vatMinor: row.vat_minor,
+    grossMinor: row.gross_minor,
     currencyCode: row.currency_code,
     status: row.status,
     totalMatchesLineItems: lineItemsMatchTotal(row.line_items, row.total_minor),
+    hasSourceImage: row.hasSourceImage,
+    sourceMime: row.source_image_mime,
   }));
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Invoices
+          {translate(locale, "invoices.title")}
         </h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Upload invoice files for LLM extraction, then review totals and confirm them into the active
-          currency{defaultCurrency ? ` (${defaultCurrency})` : ""}.
+          {defaultCurrency
+            ? translate(locale, "invoices.subtitle", { currency: defaultCurrency })
+            : translate(locale, "invoices.subtitleNoCurrency")}
         </p>
       </header>
 
       {!defaultCurrencySetting && (
         <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-          DEFAULT_CURRENCY is not set. No invoice can be confirmed until it is configured in Settings.
+          {translate(locale, "invoices.currencyMissing")}
         </div>
       )}
 
@@ -73,38 +82,48 @@ export default async function InvoicesPage({
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          Status
+          {translate(locale, "invoices.filterStatus")}
           <select name="status" defaultValue={status ?? ""} className={INPUT_CLASS}>
-            <option value="">All</option>
-            <option value="needs_review">Needs review</option>
-            <option value="confirmed">Confirmed</option>
+            <option value="">{translate(locale, "invoices.statusAll")}</option>
+            <option value="needs_review">{translate(locale, "invoices.statusNeedsReview")}</option>
+            <option value="confirmed">{translate(locale, "invoices.statusConfirmed")}</option>
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          Project
-          <input name="project" defaultValue={project ?? ""} placeholder="Filter by project" className={INPUT_CLASS} />
+          {translate(locale, "common.project")}
+          <input
+            name="project"
+            defaultValue={project ?? ""}
+            placeholder={translate(locale, "invoices.filterProject")}
+            className={INPUT_CLASS}
+          />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-          Vendor
-          <input name="vendor" defaultValue={vendor ?? ""} placeholder="Filter by vendor" className={INPUT_CLASS} />
+          {translate(locale, "common.vendor")}
+          <input
+            name="vendor"
+            defaultValue={vendor ?? ""}
+            placeholder={translate(locale, "invoices.filterVendor")}
+            className={INPUT_CLASS}
+          />
         </label>
         <button
           type="submit"
           className="h-9 rounded-lg bg-zinc-900 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
         >
-          Filter
+          {translate(locale, "common.filter")}
         </button>
         <Link
           href="/invoices"
           className="h-9 rounded-lg border border-zinc-200 px-3 text-sm font-medium leading-9 text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
-          Clear
+          {translate(locale, "common.clear")}
         </Link>
       </form>
 
       {tableRows.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-300 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-          No invoices match the current filters. Upload an invoice to get started.
+          {translate(locale, "invoices.empty")}
         </p>
       ) : (
         <InvoiceTable rows={tableRows} defaultCurrency={defaultCurrency} />

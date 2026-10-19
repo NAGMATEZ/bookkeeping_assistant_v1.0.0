@@ -30,15 +30,47 @@ const INCOME_TOKENS = new Set([
   "in",
   "be",
   "bevetel",
-  "bevétel",
-  "jóváírás",
-  "jovaíras",
+  "bev",
+  "jovairas",
+  "kovetel",
+  "igen",
   "+",
   "1",
 ]);
 
-function tokenIsIncome(value: string): boolean {
-  return INCOME_TOKENS.has(value.trim().toLowerCase());
+const EXPENSE_TOKENS = new Set([
+  "expense",
+  "debit",
+  "out",
+  "kiadas",
+  "terheles",
+  "kifizetes",
+  "koltseg",
+  "tartozik",
+  "nem",
+  "-",
+  "0",
+]);
+
+// Strip Hungarian accents so "bevétel", "BEVÉTEL", and "bevetel" all resolve identically.
+function normalizeDirectionToken(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function tokenIsIncome(value: string): boolean | null {
+  const token = normalizeDirectionToken(value);
+  if (INCOME_TOKENS.has(token)) {
+    return true;
+  }
+  if (EXPENSE_TOKENS.has(token)) {
+    return false;
+  }
+  return null;
 }
 
 function cell(row: string[], index: number | undefined): string {
@@ -57,8 +89,12 @@ export function resolveRowIsIncome(
     return override;
   }
   if (directionValue !== "") {
-    return tokenIsIncome(directionValue);
+    const fromColumn = tokenIsIncome(directionValue);
+    if (fromColumn !== null) {
+      return fromColumn;
+    }
   }
+  // A plain amount with no explicit signal is income (replaces the old expense default).
   return amountMinor >= 0;
 }
 

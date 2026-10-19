@@ -1,7 +1,10 @@
 // spec: precedence lowest→highest: sign-based inference, then a mapped direction column, then an explicit
 //   per-row override; overrides captured during a 5-row preview must still apply to rows 6+ at import.
 // expected (hand-derived): "-50.00" with no direction/override → amountMinor -5000 (expense);
+//   "(50.00)" (accounting negative) → -5000; plain "50.00" with no signal → +5000 (income default);
 //   direction "income" on "-50.00" → +5000; direction "expense" + override true → +5000;
+//   Hungarian accent-insensitive words: "bevétel"/"BEVÉTEL"/"jóváírás"/"követel"/"igen" → income,
+//   "kiadás"/"terhelés"/"kifizetés"/"költség"/"tartozik"/"nem" → expense; unknown token falls back to sign;
 //   8 rows "-10.00" with overrides {3:true, 7:true} → exactly rows 3 and 7 positive (row 7 beyond the preview),
 //   all other rows -1000; invalid date row is skipped and reported, not mapped.
 import { describe, expect, it } from "vitest";
@@ -29,6 +32,24 @@ describe("resolveRowIsIncome", () => {
     expect(resolveRowIsIncome(-5000, "expense", true)).toBe(true);
     expect(resolveRowIsIncome(5000, "income", false)).toBe(false);
   });
+
+  it("recognizes Hungarian direction words without accents", () => {
+    for (const word of ["bevétel", "BEVÉTEL", "bev", "jóváírás", "követel", "igen"]) {
+      expect(resolveRowIsIncome(-5000, word)).toBe(true);
+    }
+    for (const word of ["kiadás", "terhelés", "kifizetés", "költség", "tartozik", "nem"]) {
+      expect(resolveRowIsIncome(5000, word)).toBe(false);
+    }
+  });
+
+  it("falls back to the sign for an unrecognized direction value", () => {
+    expect(resolveRowIsIncome(-5000, "maybe")).toBe(false);
+    expect(resolveRowIsIncome(5000, "maybe")).toBe(true);
+  });
+
+  it("defaults plain unsigned amounts to income", () => {
+    expect(resolveRowIsIncome(5000, "")).toBe(true);
+  });
 });
 
 describe("mapImportRows", () => {
@@ -38,6 +59,15 @@ describe("mapImportRows", () => {
     expect(result.skipped).toEqual([]);
     expect(result.records[0].amountMinor).toBe(-5000);
     expect(result.records[0].dateInt).toBe(20260115);
+  });
+
+  it("maps accounting parentheses to an expense and plain amounts to income", () => {
+    const result = mapImportRows(
+      [row("2026-01-15", "(50.00)"), row("2026-01-16", "50.00")],
+      MAPPING,
+    );
+
+    expect(result.records.map((record) => record.amountMinor)).toEqual([-5000, 5000]);
   });
 
   it("applies overrides only to their own row indices, including rows past the preview", () => {

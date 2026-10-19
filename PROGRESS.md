@@ -58,5 +58,5 @@ Remaining work: none; user scratch file "Új szöveges dokumentum.txt" intention
 - [DONE] tests/i18n-format.test.ts - localization key/interpolation and HUF formatting checks - notes:
 - [DONE] tests/migration-upgrade.test.ts - upgrade-in-place data preservation checks - notes:
 - [DONE] tests/reset-route.test.ts - reset confirmation and deletion-count checks - notes:
-- [DONE] src/lib/migrations.ts - baseline legacy databases without a Drizzle journal before boot migration - notes: SUBMISSION_NOTES.md #15
-- [DONE] tests/legacy-migration-baseline.test.ts - reproduces a journal-less legacy database and verifies in-place 0001 upgrade - notes: SUBMISSION_NOTES.md #15
+- [DONE] src/lib/migrations.ts - normalize journal-less, stale-journal, and partially upgraded legacy databases before boot migration - notes: SUBMISSION_NOTES.md #15
+- [DONE] tests/legacy-migration-baseline.test.ts - reproduces journal-less and stale-partial legacy databases and verifies in-place 0001 upgrade - notes: SUBMISSION_NOTES.md #15

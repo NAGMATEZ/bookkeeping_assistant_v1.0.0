@@ -73,7 +73,8 @@ export async function POST(request: Request): Promise<Response> {
     const parsed = parseImportFile(file.name, bytes);
     const { records, skipped } = mapImportRows(parsed.rows, mapping.data, overrides);
 
-    const persisted = await persistImport(records);
+    const source = /\.xlsx?$/i.test(file.name) ? "xlsx" : "csv";
+    const persisted = await persistImport(records, source);
     if (!persisted.ok) {
       return Response.json({ ok: false, message: persisted.message }, { status: persisted.status });
     }

@@ -2,6 +2,8 @@
 // expected (hand-derived): 5.6 + 4.9 = 10.5 pre-round → one round = 11 (Math.round tie rule, SUBMISSION_NOTES #1);
 //   discriminating case: 0.4 + 0.4 → round-once = round(0.8) = 1, while round-then-sum = 0 + 0 = 0, so 1 proves no per-item rounding.
 // expected parse (major→minor, ×100): "1 000,00" → 100000; "-12.34" → -1234; "1,234.56" → 123456.
+//   Excel/bank formats: "50 000 Ft" (NBSP/narrow-NBSP) → 5000000; "(1,234.56)" → -123456 (accounting negative);
+//   "12a.34" still rejected (embedded letters are not a currency token).
 // expected format (minor→major, ÷100): 1234 → "12.34"; -5 → "-0.05"; 100000 → "1000.00".
 import { describe, expect, it } from "vitest";
 
@@ -37,9 +39,21 @@ describe("parseDecimalToMinorUnits", () => {
     expect(parseDecimalToMinorUnits("50")).toBe(5000);
   });
 
+  it("tolerates NBSP/narrow-NBSP thousands separators and currency tokens", () => {
+    expect(parseDecimalToMinorUnits("50\u00a0000\u202fFt")).toBe(5000000);
+    expect(parseDecimalToMinorUnits("1 234 Ft")).toBe(123400);
+    expect(parseDecimalToMinorUnits("HUF 50 000")).toBe(5000000);
+  });
+
+  it("treats accounting parentheses as negative", () => {
+    expect(parseDecimalToMinorUnits("(1,234.56)")).toBe(-123456);
+    expect(parseDecimalToMinorUnits("(50 000 Ft)")).toBe(-5000000);
+  });
+
   it("rejects malformed or over-precise input", () => {
     expect(() => parseDecimalToMinorUnits("abc")).toThrow('Invalid amount: "abc"');
     expect(() => parseDecimalToMinorUnits("1.2345")).toThrow('Amount has more than 2 decimal places: "1.2345"');
+    expect(() => parseDecimalToMinorUnits("12a.34")).toThrow('Invalid amount: "12a.34"');
   });
 });
 

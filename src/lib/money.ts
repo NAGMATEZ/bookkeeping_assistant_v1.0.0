@@ -1,5 +1,12 @@
 const DECIMAL_INPUT = /^[+-]?[\d.,]+$/;
 
+// Spaces used as thousands separators by Excel/bank exports: regular, NBSP, narrow NBSP, thin space.
+const SPACE_SEPARATORS = /[\s\u00a0\u202f\u2009]/g;
+
+// Recognized currency tokens may lead or trail the number ("50 000 Ft", "HUF 50000").
+// Tokens must not be glued to other letters, so "12a.34" is still rejected.
+const CURRENCY_TOKEN = /(^|[^A-Za-z])(HUF|FT|USD|EUR|GBP|CHF|\$|€|£)(?![A-Za-z])/gi;
+
 function isGroupingSeparator(unsigned: string, index: number): boolean {
   const char = unsigned[index];
   if (unsigned.split(char).length - 1 > 1) {
@@ -31,13 +38,22 @@ export function minorUnitsToDecimal(minorUnits: number): string {
 }
 
 export function parseDecimalToMinorUnits(input: string): number {
-  const cleaned = input.trim().replace(/[\s\u00a0]/g, "");
+  let text = input.trim().replace(CURRENCY_TOKEN, "$1 ");
+  let parenthesesNegative = false;
+
+  if (text.startsWith("(") && text.endsWith(")")) {
+    parenthesesNegative = true;
+    text = text.slice(1, -1).trim();
+  }
+
+  const cleaned = text.replace(SPACE_SEPARATORS, "");
 
   if (cleaned === "" || !DECIMAL_INPUT.test(cleaned)) {
     throw new Error(`Invalid amount: "${input}"`);
   }
 
-  const sign = cleaned.startsWith("-") ? -1 : 1;
+  const explicitSign = cleaned.startsWith("-") ? -1 : 1;
+  const sign = parenthesesNegative ? -1 : explicitSign;
   const unsigned = cleaned.replace(/^[+-]/, "");
 
   const dotIndex = unsigned.lastIndexOf(".");

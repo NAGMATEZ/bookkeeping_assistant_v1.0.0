@@ -79,15 +79,21 @@ export async function createManualTransaction(
     };
   }
 
+  // An explicit sign on the amount (or accounting parentheses) wins over the toggle, so typing
+  // "-12.34" switches the entry to an expense without a second click. Unsigned input uses the toggle.
+  const explicitlySigned = /^[-+(]/.test(input.amount.trim());
+  const isIncome = explicitlySigned ? magnitude > 0 : input.isIncome;
+
   const [created] = await db
     .insert(transactions)
     .values({
       date: dateInt,
-      amount_minor: input.isIncome ? Math.abs(magnitude) : -Math.abs(magnitude),
+      amount_minor: isIncome ? Math.abs(magnitude) : -Math.abs(magnitude),
       currency_code: defaultCurrency.value,
       category,
       project: input.project.trim(),
       description: input.description.trim(),
+      source: "manual",
     })
     .returning();
 

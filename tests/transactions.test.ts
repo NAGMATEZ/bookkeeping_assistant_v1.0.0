@@ -1,8 +1,9 @@
 // spec: manual entry — Amount decimal→minor units, Income/Expense toggle sets the sign, entries are always
 //   DEFAULT_CURRENCY; description persists; list filters by project/category/date range; delete removes the row.
-// expected (hand-derived): submit 12.34 as expense with DEFAULT_CURRENCY HUF → amount_minor -1234, currency HUF;
-//   as income → +1234; date "2024-02-30" → 400 invalid date; amount zero → 400; missing DEFAULT_CURRENCY → 503;
-//   date-range filter [2026-01-01, 2026-01-31] excludes a 2025-12-31 row; delete removes only the target row.
+// expected (hand-derived): submit 12.34 as expense with DEFAULT_CURRENCY HUF → amount_minor -1234, currency HUF,
+//   source "manual"; as income → +1234; an explicit "-12.34" with isIncome true still stores -1234 (sign wins,
+//   matching the auto-toggle); date "2024-02-30" → 400 invalid date; amount zero → 400; missing DEFAULT_CURRENCY
+//   → 503; date-range filter [2026-01-01, 2026-01-31] excludes a 2025-12-31 row; delete removes only the target row.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -57,6 +58,7 @@ describe("createManualTransaction", () => {
       category: "Office",
       project: "P1",
       description: "Printer paper",
+      source: "manual",
     });
   });
 
@@ -75,6 +77,23 @@ describe("createManualTransaction", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.transaction.amount_minor).toBe(1234);
+  });
+
+  it("lets an explicit negative sign override the Income toggle", async () => {
+    await setDefaultCurrency("HUF");
+
+    const result = await createManualTransaction({
+      date: "2026-01-22",
+      amount: "-12.34",
+      isIncome: true,
+      category: "Office",
+      project: "",
+      description: "",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.transaction.amount_minor).toBe(-1234);
   });
 
   it("rejects invalid dates, zero amounts, and a missing default currency", async () => {

@@ -50,6 +50,24 @@ describe("POST /api/transactions", () => {
     expect(stored[0].amount_minor).toBe(-1234);
     expect(stored[0].currency_code).toBe("HUF");
     expect(stored[0].description).toBe("Printer paper");
+    expect(stored[0].source).toBe("manual");
+  });
+
+  it("honors an explicit negative sign over isIncome", async () => {
+    const response = await post({
+      date: "2026-01-21",
+      amount: "-12.34",
+      isIncome: true,
+      category: "Office",
+      project: "",
+      description: "",
+    });
+    const body = (await response.json()) as { ok: boolean; transactionId: string };
+
+    expect(response.status).toBe(200);
+    expect(body.ok).toBe(true);
+    const stored = await db.select().from(transactions).where(eq(transactions.id, body.transactionId));
+    expect(stored[0].amount_minor).toBe(-1234);
   });
 
   it("rejects an invalid payload with a specific message", async () => {

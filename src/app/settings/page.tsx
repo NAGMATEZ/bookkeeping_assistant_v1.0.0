@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 
+import { LanguageSelector } from "@/components/settings/language-selector";
+import { ResetPanel } from "@/components/settings/reset-panel";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { translate } from "@/lib/i18n";
 import { minorUnitsToDecimal } from "@/lib/money";
+import { getLocale, localizedMetadata } from "@/lib/preferences";
 import { getOpeningBalanceMinor, resolveSetting } from "@/lib/settings";
 
-export const metadata: Metadata = {
-  title: "Settings — Bookkeeping Assistant",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata("meta.settings");
+}
 
 export default async function SettingsPage() {
+  const locale = await getLocale();
   const [
     primaryBaseUrl,
     primaryModel,
@@ -36,20 +41,20 @@ export default async function SettingsPage() {
     <div className="mx-auto w-full max-w-3xl px-6 py-8">
       <header className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          Settings
+          {translate(locale, "settings.title")}
         </h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Provider credentials, default currency, and opening balance. API keys are stored encrypted and
-          are never rendered back into this page.
-        </p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{translate(locale, "settings.subtitle")}</p>
       </header>
 
       {!defaultCurrency && (
         <div className="mb-8 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-          DEFAULT_CURRENCY is not set. Invoices cannot be confirmed and manual entries/imports are
-          blocked until it is configured.
+          {translate(locale, "settings.currencyMissing")}
         </div>
       )}
+
+      <div className="mb-8">
+        <LanguageSelector />
+      </div>
 
       <SettingsForm
         initial={{
@@ -63,6 +68,8 @@ export default async function SettingsPage() {
           openingBalance,
         }}
       />
+
+      <ResetPanel />
     </div>
   );
 }

@@ -6,7 +6,6 @@
 //   "now" in May → delta excludes May unless current; MA = (100+200+300)/3 = 200; opening 10000 + sum 2500 →
 //   12500; projections(10000, 500) → d30 10500, d60 11000, d90 11500; buckets for now=2026-01 span Dec/Jan keys;
 //   forecast months are the 3 calendar months AFTER now (Nov 2025 → 2025-12, 2026-01, 2026-02).
-import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 

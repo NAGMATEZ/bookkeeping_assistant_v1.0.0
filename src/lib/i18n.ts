@@ -89,6 +89,7 @@ const hu = {
   "dashboard.month1": "1 hónap",
   "dashboard.month3": "3 hónap",
   "dashboard.month6": "6 hónap",
+  "dashboard.days": "{count} nap",
   "dashboard.footnote":
     "Az előzménypontok a számított havi egyenlegek folyamatos hónapokkal; a szaggatott szakasz az előrejelzés. Az előrejelzés 30 napos hónapokkal számol — pozíció + mozgóátlag × hónapok.",
 
@@ -149,6 +150,7 @@ const hu = {
   "import.importedWithSkips":
     "{count} sor importálva. {skipped} kihagyva: {details}",
   "import.rowDetail": "{row}. sor ({reason})",
+  "import.columnFallback": "{index}. oszlop",
   "import.mapRequired": "Először rendeld hozzá ezeket a kötelező oszlopokat: {fields}",
   "import.previewFailed": "Az előnézet nem sikerült: {detail}",
   "import.previewFailedHttp": "Az előnézet HTTP {status} hibával megszakadt.",
@@ -349,6 +351,7 @@ const en: Record<MessageKey, string> = {
   "dashboard.month1": "1 month",
   "dashboard.month3": "3 months",
   "dashboard.month6": "6 months",
+  "dashboard.days": "{count} days",
   "dashboard.footnote":
     "Historical points are the computed monthly balances across continuous months; the dashed segment is the forecast. Projections assume 30-day months — position + moving average × months.",
 
@@ -407,6 +410,7 @@ const en: Record<MessageKey, string> = {
   "import.imported": "Imported {count} rows.",
   "import.importedWithSkips": "Imported {count} rows. Skipped {skipped}: {details}",
   "import.rowDetail": "row {row} ({reason})",
+  "import.columnFallback": "Column {index}",
   "import.mapRequired": "Map these required columns first: {fields}",
   "import.previewFailed": "Preview failed: {detail}",
   "import.previewFailedHttp": "Preview failed with HTTP {status}.",

@@ -1,7 +1,8 @@
 // spec: confirm endpoint — eligible invoice → 200 and a linked transaction with amount_minor = -total_minor;
 //   non-default-currency invoice → 400 with the multi-currency message and zero DB writes.
-// expected: total 5000 HUF + DEFAULT_CURRENCY HUF → transactionId returned and transaction amount_minor -5000;
-//   EUR invoice while active currency is USD → exact rejection message, 0 transactions; unknown id → 404.
+// expected: total 5000 HUF (printed forints, corrected ×100) + DEFAULT_CURRENCY HUF → transactionId returned and
+//   transaction amount_minor -500000 with net/gross 500000; EUR invoice while active currency is USD → exact
+//   rejection message, 0 transactions; unknown id → 404.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -63,7 +64,12 @@ describe("POST /api/invoices/[id]/confirm", () => {
 
     const linked = await db.select().from(transactions).where(eq(transactions.id, body.transactionId));
     expect(linked).toHaveLength(1);
-    expect(linked[0].amount_minor).toBe(-5000);
+    expect(linked[0]).toMatchObject({
+      amount_minor: -500000,
+      net_minor: 500000,
+      gross_minor: 500000,
+      source: "invoice",
+    });
   });
 
   it("rejects a non-default-currency invoice and creates no transaction", async () => {

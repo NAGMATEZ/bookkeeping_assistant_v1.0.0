@@ -1,5 +1,5 @@
-Current focus: Version update complete - HU-default i18n, theme toggle, dashboard ranges, invoice net/VAT/gross + image editing, transactions import/export, and reset; tsc, vitest, lint, and next build green
-Remaining work: none; user scratch file "Új szöveges dokumentum.txt" intentionally untracked
+Current focus: Dark mode and WCAG-oriented accessibility polish complete - dashboard chart, focus/contrast, table regions, skip link, reduced motion; tsc, vitest, lint, and next build green
+Remaining work: none; formal WCAG certification/audit tooling is not part of the repo
 
 - [DONE] src/db/schema.ts - 3-table Drizzle schema (invoices, transactions, settings) with net/VAT/gross, content_hash, source_image/MIME, and transaction source - notes: SUBMISSION_NOTES.md #7
 - [DONE] drizzle/0001_version_update.sql - upgrade-in-place migration for the version-update columns and legacy data backfill - notes: SUBMISSION_NOTES.md #7
@@ -60,3 +60,8 @@ Remaining work: none; user scratch file "Új szöveges dokumentum.txt" intention
 - [DONE] tests/reset-route.test.ts - reset confirmation and deletion-count checks - notes:
 - [DONE] src/lib/migrations.ts - normalize journal-less, stale-journal, and partially upgraded legacy databases before boot migration - notes: SUBMISSION_NOTES.md #15
 - [DONE] tests/legacy-migration-baseline.test.ts - reproduces journal-less and stale-partial legacy databases and verifies in-place 0001 upgrade - notes: SUBMISSION_NOTES.md #15
+- [DONE] src/app/globals.css - dark/light chart tokens, color-scheme, focus-visible outline, reduced-motion support - notes: SUBMISSION_NOTES.md #16
+- [DONE] src/components/dashboard/projection-chart.tsx - theme-aware white-in-dark line/grid/axis/tooltip, solid/dashed legend, screen-reader data summary - notes: SUBMISSION_NOTES.md #16
+- [DONE] src/app/layout.tsx - skip-to-content link and focusable main landmark - notes: SUBMISSION_NOTES.md #16
+- [DONE] src/components/layout/sidebar.tsx - drawer inert when closed, labeled/controlled menu button, accessible focus/borders - notes: SUBMISSION_NOTES.md #16
+- [DONE] accessibility pass across tables/forms/import/settings - captions, named scroll regions, action headers, signed amounts, visible focus and contrast fixes - notes: SUBMISSION_NOTES.md #16

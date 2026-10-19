@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 
 type Status =
@@ -16,6 +17,7 @@ const INPUT_CLASS =
 
 export function ManualEntryForm() {
   const router = useRouter();
+  const t = useT();
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
   const [isIncome, setIsIncome] = useState(false);
@@ -24,9 +26,23 @@ export function ManualEntryForm() {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
+  function handleAmountChange(value: string): void {
+    setAmount(value);
+    const trimmed = value.trim();
+    if (trimmed.startsWith("-") || trimmed.startsWith("(")) {
+      setIsIncome(false);
+    } else if (trimmed.startsWith("+")) {
+      setIsIncome(true);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus({ kind: "saving" });
+    const trimmed = amount.trim();
+    const signedIncome = /^[-+(]/.test(trimmed)
+      ? !trimmed.startsWith("-") && !trimmed.startsWith("(")
+      : isIncome;
 
     try {
       const response = await fetch("/api/transactions", {
@@ -39,20 +55,24 @@ export function ManualEntryForm() {
       if (!response.ok || body?.ok !== true) {
         setStatus({
           kind: "error",
-          message: body?.message ?? `Saving the transaction failed with HTTP ${response.status}`,
+          message: body?.message ?? t("transactions.saveFailedHttp", { status: response.status }),
         });
         return;
       }
 
-      setStatus({ kind: "success", message: isIncome ? "Income recorded." : "Expense recorded." });
+      setStatus({
+        kind: "success",
+        message: signedIncome ? t("transactions.addedIncome") : t("transactions.addedExpense"),
+      });
       setAmount("");
       setDescription("");
       router.refresh();
     } catch (error) {
       setStatus({
         kind: "error",
-        message:
-          error instanceof Error ? `Saving the transaction failed: ${error.message}` : "Saving the transaction failed",
+        message: t("transactions.saveFailed", {
+          detail: error instanceof Error ? error.message : t("errors.unknown"),
+        }),
       });
     }
   }
@@ -63,22 +83,22 @@ export function ManualEntryForm() {
       className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-6 dark:border-zinc-800 dark:bg-zinc-900"
     >
       <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-        Date
+        {t("manual.date")}
         <input type="date" required value={date} onChange={(event) => setDate(event.target.value)} className={INPUT_CLASS} />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-        Amount
+        {t("manual.amount")}
         <input
           required
           inputMode="decimal"
-          placeholder="12.34"
+          placeholder={t("manual.amountPlaceholder")}
           value={amount}
-          onChange={(event) => setAmount(event.target.value)}
+          onChange={(event) => handleAmountChange(event.target.value)}
           className={INPUT_CLASS}
         />
       </label>
       <div className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-        Direction
+        {t("manual.direction")}
         <div className="flex h-9 items-center gap-1 rounded-lg border border-zinc-200 p-1 dark:border-zinc-700">
           <button
             type="button"
@@ -88,7 +108,7 @@ export function ManualEntryForm() {
               !isIncome ? "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300" : "text-zinc-500"
             }`}
           >
-            Expense
+            {t("common.expense")}
           </button>
           <button
             type="button"
@@ -98,26 +118,27 @@ export function ManualEntryForm() {
               isIncome ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" : "text-zinc-500"
             }`}
           >
-            Income
+            {t("common.income")}
           </button>
         </div>
       </div>
       <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-        Category
+        {t("manual.category")}
         <input required value={category} onChange={(event) => setCategory(event.target.value)} className={INPUT_CLASS} />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-        Project
+        {t("manual.project")}
         <input value={project} onChange={(event) => setProject(event.target.value)} className={INPUT_CLASS} />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-        Description
+        {t("manual.description")}
         <input value={description} onChange={(event) => setDescription(event.target.value)} className={INPUT_CLASS} />
       </label>
-      <div className="flex items-center gap-3 sm:col-span-2 lg:col-span-6">
+      <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-6">
         <Button type="submit" disabled={status.kind === "saving"}>
-          {status.kind === "saving" ? "Saving…" : "Add transaction"}
+          {status.kind === "saving" ? t("common.saving") : t("manual.add")}
         </Button>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">{t("manual.signedHint")}</span>
         {status.kind === "success" && (
           <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
             {status.message}

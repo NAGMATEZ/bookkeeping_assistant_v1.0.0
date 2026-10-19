@@ -17,9 +17,9 @@ beforeAll(async () => {
   vi.stubEnv("NODE_ENV", "development");
   vi.stubEnv("TURSO_DATABASE_URL", ":memory:");
   vi.stubEnv("TURSO_AUTH_TOKEN", "test-token");
-  const module = await import("@/lib/db");
-  db = module.db;
-  client = module.client;
+  const dbModule = await import("@/lib/db");
+  db = dbModule.db;
+  client = dbModule.client;
   await migrate(db, { migrationsFolder: "./drizzle" });
 });
 

@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { GuardrailScreen } from "@/components/layout/guardrail-screen";
+import { I18nProvider } from "@/components/layout/i18n-provider";
 import { Sidebar } from "@/components/layout/sidebar";
+import { translate } from "@/lib/i18n";
+import { getLocale, getTheme } from "@/lib/preferences";
 import { checkStartup } from "@/lib/startup-gate";
 
 import "./globals.css";
@@ -17,10 +20,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Bookkeeping Assistant",
-  description: "Invoices, transactions, imports, and projections in one place",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  return {
+    title: translate(locale, "meta.root"),
+    description: translate(locale, "meta.description"),
+  };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -29,21 +35,23 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const startup = await checkStartup();
+  const [startup, locale, theme] = await Promise.all([checkStartup(), getLocale(), getTheme()]);
 
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang={locale}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased${theme === "dark" ? " dark" : ""}`}
     >
       <body className="min-h-full">
         {startup.ok ? (
-          <div className="flex min-h-screen w-full">
-            <Sidebar />
-            <main className="min-w-0 flex-1 pt-14">{children}</main>
-          </div>
+          <I18nProvider locale={locale}>
+            <div className="flex min-h-screen w-full">
+              <Sidebar initialTheme={theme} />
+              <main className="min-w-0 flex-1 pt-14">{children}</main>
+            </div>
+          </I18nProvider>
         ) : (
-          <GuardrailScreen reason={startup.reason} />
+          <GuardrailScreen reason={startup.reason} locale={locale} />
         )}
       </body>
     </html>

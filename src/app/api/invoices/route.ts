@@ -20,9 +20,11 @@ import { checkUploadFile, checkUploadRateLimit } from "@/lib/upload-guard";
  */
 
 const OUTPUT_CONTRACT_PROMPT = `You extract structured data from invoice files. Respond with ONLY a JSON object matching exactly:
-{"vendor": string, "date": "YYYY-MM-DD", "total_minor": integer, "currency_code": string, "line_items": [{"description": string, "amount_minor": integer}], "suggested_category": string, "project": string}
+{"vendor": string, "date": "YYYY-MM-DD", "net_minor": integer, "vat_minor": integer, "gross_minor": integer, "total_minor": integer, "currency_code": string, "line_items": [{"description": string, "amount_minor": integer}], "suggested_category": string, "project": string}
 Rules:
-- total_minor and amount_minor are integer minor units (e.g. 1234 means 12.34 in the invoice currency).
+- net_minor is the pre-tax net, vat_minor is the tax, gross_minor is the final payable amount; total_minor must equal gross_minor.
+- net_minor, vat_minor, gross_minor, total_minor and amount_minor are integer minor units (e.g. 1234 means 12.34 in the invoice currency). For zero-decimal currencies such as HUF, return the printed whole amount (the app normalizes it).
+- If the invoice has no tax, set vat_minor to 0 and net_minor equal to gross_minor.
 - currency_code must be the invoice's ISO 4217 code (e.g. "USD", "HUF").
 - date must be the invoice date in YYYY-MM-DD form.
 - suggested_category is a short expense category; use "" if you cannot tell.
@@ -103,6 +105,8 @@ export async function POST(request: Request): Promise<Response> {
       contentHash,
       rawLlmResponse: dispatch.text,
       defaultCurrency: defaultCurrency.value,
+      sourceImage: buffer.toString("base64"),
+      sourceImageMime: file.type,
     });
 
     return json({ ok: true, invoiceId: invoice.id, duplicate, status: invoice.status });

@@ -3,9 +3,9 @@
 //   sent to the dispatcher as a base64 data URL and stored as needs_review.
 // expected (hand-derived): 16MiB PDF → 400 "File is too large (16.0 MB)...", dispatch not called, zero rows added;
 //   .txt → unsupported-type 400; 11th request for one IP in the window → 429 "Try again in 600 seconds" and no
-//   dispatch; valid PNG with provider JSON total 5000 → { ok:true, duplicate:false, status:"needs_review" } and the
-//   dispatcher receives "data:image/png;base64,<bytes>"; re-uploading identical bytes → duplicate:true, same id,
-//   dispatch call count unchanged.
+//   dispatch; valid PNG with provider JSON total 5000 (USD) → { ok:true, duplicate:false, status:"needs_review" },
+//   the dispatcher receives "data:image/png;base64,<bytes>", the bytes are stored for preview, and the content
+//   hash is persisted for dedupe; re-uploading identical bytes → duplicate:true, same id, dispatch count unchanged.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,7 +30,7 @@ function invoiceJson(overrides: Record<string, unknown> = {}): string {
     vendor: "Acme Kft",
     date: "2026-01-15",
     total_minor: 5000,
-    currency_code: "HUF",
+    currency_code: "USD",
     line_items: [{ description: "Widget", amount_minor: 5000 }],
     suggested_category: "Office supplies",
     project: "P1",
@@ -63,7 +63,7 @@ async function setDefaultCurrency(code: string): Promise<void> {
 
 beforeAll(async () => {
   await migrate(db, { migrationsFolder: "./drizzle" });
-  await setDefaultCurrency("HUF");
+  await setDefaultCurrency("USD");
 });
 
 beforeEach(() => {
@@ -132,7 +132,9 @@ describe("POST /api/invoices", () => {
 
     const stored = await db.select().from(invoices).where(eq(invoices.id, body.invoiceId));
     expect(stored).toHaveLength(1);
-    expect(stored[0].source_image).toBe(`sha256:${hashUploadContent(bytes)}`);
+    expect(stored[0].content_hash).toBe(hashUploadContent(bytes));
+    expect(stored[0].source_image).toBe(Buffer.from(bytes).toString("base64"));
+    expect(stored[0].source_image_mime).toBe("image/png");
     expect(stored[0].raw_llm_response).toBe(invoiceJson());
 
     const messages = dispatchChatMock.mock.calls[0][0] as Array<{
@@ -162,7 +164,7 @@ describe("POST /api/invoices", () => {
     const stored = await db
       .select()
       .from(invoices)
-      .where(eq(invoices.source_image, `sha256:${hashUploadContent(bytes)}`));
+      .where(eq(invoices.content_hash, hashUploadContent(bytes)));
     expect(stored).toHaveLength(1);
   });
 });

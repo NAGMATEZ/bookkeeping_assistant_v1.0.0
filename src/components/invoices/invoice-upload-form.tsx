@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 
+import { useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 
 type Status =
@@ -13,6 +14,7 @@ type Status =
 
 export function InvoiceUploadForm() {
   const router = useRouter();
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -21,7 +23,7 @@ export function InvoiceUploadForm() {
     event.preventDefault();
 
     if (!file) {
-      setStatus({ kind: "error", message: "Choose an invoice file first (PNG, JPEG, WEBP, or PDF)." });
+      setStatus({ kind: "error", message: t("invoices.chooseFile") });
       return;
     }
 
@@ -40,16 +42,14 @@ export function InvoiceUploadForm() {
       if (!response.ok || body?.ok !== true) {
         setStatus({
           kind: "error",
-          message: body?.message ?? `Invoice upload failed with HTTP ${response.status}`,
+          message: body?.message ?? t("invoices.uploadFailedHttp", { status: response.status }),
         });
         return;
       }
 
       setStatus({
         kind: "success",
-        message: body.duplicate
-          ? "This file was already imported — showing the existing invoice."
-          : "Invoice uploaded and queued for review.",
+        message: body.duplicate ? t("invoices.uploadDuplicate") : t("invoices.uploadSuccess"),
       });
       setFile(null);
       if (inputRef.current) {
@@ -59,8 +59,9 @@ export function InvoiceUploadForm() {
     } catch (error) {
       setStatus({
         kind: "error",
-        message:
-          error instanceof Error ? `Invoice upload failed: ${error.message}` : "Invoice upload failed",
+        message: t("invoices.uploadFailed", {
+          detail: error instanceof Error ? error.message : t("errors.unknown"),
+        }),
       });
     }
   }
@@ -79,9 +80,9 @@ export function InvoiceUploadForm() {
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={status.kind === "uploading"} className="shrink-0">
-          {status.kind === "uploading" ? "Uploading…" : "Upload invoice"}
+          {status.kind === "uploading" ? t("invoices.uploading") : t("invoices.upload")}
         </Button>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">PNG/JPEG/WEBP/PDF, max 15MB</span>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">{t("invoices.uploadHint")}</span>
       </div>
       {status.kind === "success" && (
         <p role="status" className="text-sm font-medium text-emerald-600 sm:ml-2 dark:text-emerald-400">

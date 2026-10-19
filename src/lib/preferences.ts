@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 
+import { COOKIE_MAX_AGE, LOCALE_COOKIE, THEME_COOKIE, type Theme } from "@/lib/cookies";
 import { DEFAULT_LOCALE, isLocale, translate, type Locale, type MessageKey } from "@/lib/i18n";
 
-export const LOCALE_COOKIE = "lang";
-export const THEME_COOKIE = "theme";
-export const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
-
-export type Theme = "light" | "dark";
+export { COOKIE_MAX_AGE, LOCALE_COOKIE, THEME_COOKIE };
+export type { Theme };
 
 export async function getLocale(): Promise<Locale> {
   const store = await cookies();

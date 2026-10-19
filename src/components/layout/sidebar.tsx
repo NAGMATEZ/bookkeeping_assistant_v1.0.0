@@ -36,7 +36,7 @@ export function Sidebar() {
           data-testid="sidebar-scrim"
           aria-hidden="true"
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-zinc-950/40 lg:bg-transparent"
+          className="fixed inset-0 z-40 bg-zinc-950/40 lg:hidden"
         />
       )}
 

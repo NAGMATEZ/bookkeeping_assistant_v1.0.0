@@ -4,7 +4,8 @@
 //   year/month values as the buckets (no year-boundary drift).
 // expected (hand-derived): 3 needs_review + 2 confirmed → 3; Feb 100 + Mar 200 + Apr 300 + partial May 9999 with
 //   "now" in May → delta excludes May unless current; MA = (100+200+300)/3 = 200; opening 10000 + sum 2500 →
-//   12500; projections(10000, 500) → d30 10500, d60 11000, d90 11500; buckets for now=2026-01 span Dec/Jan keys.
+//   12500; projections(10000, 500) → d30 10500, d60 11000, d90 11500; buckets for now=2026-01 span Dec/Jan keys;
+//   forecast months are the 3 calendar months AFTER now (Nov 2025 → 2025-12, 2026-01, 2026-02).
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -23,6 +24,7 @@ import {
   getMovingAverageMinor,
   getNetMonthlyDelta,
   getPendingInvoiceStats,
+  monthKeysAfter,
 } from "@/lib/dashboard";
 
 async function setSetting(key: string, value: string): Promise<void> {
@@ -103,6 +105,10 @@ describe("dashboard math", () => {
 
   it("computes 30/60/90 projections from position and moving average", () => {
     expect(computeProjections(10000, 500)).toEqual({ d30: 10500, d60: 11000, d90: 11500 });
+  });
+
+  it("labels the forecast months after the current one, across a year boundary", () => {
+    expect(monthKeysAfter(new Date(Date.UTC(2025, 10, 15)), 3)).toEqual(["2025-12", "2026-01", "2026-02"]);
   });
 
   it("keeps month labels in sync with buckets across a year boundary", () => {

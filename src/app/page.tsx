@@ -10,6 +10,7 @@ import {
   getMovingAverageMinor,
   getNetMonthlyDelta,
   getPendingInvoiceStats,
+  monthKeysAfter,
 } from "@/lib/dashboard";
 import { minorUnitsToDecimal } from "@/lib/money";
 import { resolveSetting } from "@/lib/settings";
@@ -47,17 +48,18 @@ export default async function DashboardPage() {
   const projections = computeProjections(position, movingAverage);
 
   const bucketTotal = buckets.reduce((sum, bucket) => sum + bucket.netMinor, 0);
-  const points: ProjectionPoint[] = [];
+  const history: ProjectionPoint[] = [];
   let running = position - bucketTotal;
   for (const bucket of buckets) {
     running += bucket.netMinor;
-    points.push({ label: bucket.month, value: running });
+    history.push({ label: bucket.month, value: running });
   }
-  points.push(
-    { label: "30 days", value: projections.d30 },
-    { label: "60 days", value: projections.d60 },
-    { label: "90 days", value: projections.d90 },
-  );
+  const forecastMonths = monthKeysAfter(new Date(), 3);
+  const forecast: ProjectionPoint[] = [
+    { label: forecastMonths[0], value: projections.d30 },
+    { label: forecastMonths[1], value: projections.d60 },
+    { label: forecastMonths[2], value: projections.d90 },
+  ];
 
   const format = (value: number) => `${minorUnitsToDecimal(value)} ${currency}`;
 
@@ -103,10 +105,11 @@ export default async function DashboardPage() {
             Method: Three-Month Moving Average + Opening Balance
           </span>
         </div>
-        <ProjectionChart points={points} currency={currency} />
+        <ProjectionChart history={history} forecast={forecast} currency={currency} />
         <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-          30/60/90-day projections assume 30-day months: position + moving average × (horizon days / 30). Historical
-          points are the computed monthly buckets; the final three points are projections.
+          Historical points are the computed monthly buckets; the dashed segment is the forecast, split into future
+          months. Projections assume 30-day months — position + moving average × (horizon days / 30), so the 30/60/90
+          switch shows one, two, or three projected months respectively.
         </p>
       </section>
     </div>

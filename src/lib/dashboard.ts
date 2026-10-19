@@ -27,6 +27,15 @@ function monthKeysBefore(now: Date, count: number): string[] {
   return keys;
 }
 
+export function monthKeysAfter(now: Date, count: number): string[] {
+  const keys: string[] = [];
+  for (let offset = 1; offset <= count; offset += 1) {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1));
+    keys.push(`${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`);
+  }
+  return keys;
+}
+
 function monthRange(dateIntStart: number, dateIntEnd: number) {
   return and(gte(transactions.date, dateIntStart), lte(transactions.date, dateIntEnd));
 }

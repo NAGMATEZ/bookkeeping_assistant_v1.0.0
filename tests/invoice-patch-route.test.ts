@@ -1,6 +1,6 @@
 // spec: inline total-edit PATCHes and atomically updates the linked transaction (amount_minor = -newTotal).
-// expected: edit total 5000→6000 → 200 { ok:true, total_minor:6000 } and linked transaction amount_minor -6000;
-//   non-integer total → 400 invalid-payload; unknown id → 404.
+// expected: edit total 5000→6000 → 200 { ok:true, total_minor:6000, net_minor:6000, vat_minor:0, gross_minor:6000 }
+//   and linked transaction amount_minor -6000; non-integer total → 400 invalid-payload; unknown id → 404.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -20,7 +20,7 @@ function invoiceJson(): string {
     vendor: "Acme Kft",
     date: "2026-01-15",
     total_minor: 5000,
-    currency_code: "HUF",
+    currency_code: "USD",
     line_items: [{ description: "Widget", amount_minor: 5000 }],
     suggested_category: "Office supplies",
     project: "P1",
@@ -42,8 +42,8 @@ beforeAll(async () => {
   await migrate(db, { migrationsFolder: "./drizzle" });
   await db
     .insert(settings)
-    .values({ key: "DEFAULT_CURRENCY", value: "HUF" })
-    .onConflictDoUpdate({ target: settings.key, set: { value: "HUF" } });
+    .values({ key: "DEFAULT_CURRENCY", value: "USD" })
+    .onConflictDoUpdate({ target: settings.key, set: { value: "USD" } });
 });
 
 describe("PATCH /api/invoices/[id]", () => {
@@ -51,14 +51,20 @@ describe("PATCH /api/invoices/[id]", () => {
     const { invoice } = await createInvoiceFromLlm({
       contentHash: "3".repeat(64),
       rawLlmResponse: invoiceJson(),
-      defaultCurrency: "HUF",
+      defaultCurrency: "USD",
     });
     await confirmInvoice(invoice.id);
 
     const response = await callPatch(invoice.id, { total_minor: 6000 });
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({ ok: true, total_minor: 6000 });
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      total_minor: 6000,
+      net_minor: 6000,
+      vat_minor: 0,
+      gross_minor: 6000,
+    });
     const linked = await db
       .select()
       .from(transactions)
@@ -73,7 +79,7 @@ describe("PATCH /api/invoices/[id]", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       ok: false,
-      message: "Invalid total payload — total_minor: Invalid input: expected int, received number",
+      message: "Invalid invoice payload — total_minor: Invalid input: expected int, received number",
     });
   });
 

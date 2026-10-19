@@ -52,6 +52,20 @@ describe("persistImport", () => {
     expect(stored.map((row) => row.amount_minor).sort((a, b) => a - b)).toEqual([-5000, 1000]);
     expect(stored.every((row) => row.currency_code === "HUF")).toBe(true);
     expect(stored.find((row) => row.amount_minor === 1000)?.category).toBe("Imported");
+    expect(stored.every((row) => row.source === "csv")).toBe(true);
+  });
+
+  it("tags XLSX imports distinctly", async () => {
+    await db
+      .insert(settings)
+      .values({ key: "DEFAULT_CURRENCY", value: "HUF" })
+      .onConflictDoUpdate({ target: settings.key, set: { value: "HUF" } });
+    const marker = `persist-xlsx-${Math.random()}`;
+
+    await persistImport([record({ project: marker })], "xlsx");
+
+    const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
+    expect(stored[0].source).toBe("xlsx");
   });
 
   it("fails with a specific message when DEFAULT_CURRENCY is missing", async () => {

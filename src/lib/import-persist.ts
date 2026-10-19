@@ -7,7 +7,10 @@ export type PersistImportResult =
   | { ok: true; inserted: number }
   | { ok: false; status: number; message: string };
 
-export async function persistImport(records: MappedImportRecord[]): Promise<PersistImportResult> {
+export async function persistImport(
+  records: MappedImportRecord[],
+  source: "csv" | "xlsx" = "csv",
+): Promise<PersistImportResult> {
   const defaultCurrency = await resolveSetting("DEFAULT_CURRENCY");
   if (!defaultCurrency) {
     return {
@@ -26,6 +29,7 @@ export async function persistImport(records: MappedImportRecord[]): Promise<Pers
         category: record.category || "Imported",
         project: record.project,
         description: record.description,
+        source,
       })),
     );
   }

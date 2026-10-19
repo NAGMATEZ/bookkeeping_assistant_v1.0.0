@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
+import { useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 
 export type SettingsFormInitialValues = {
@@ -61,6 +62,7 @@ function TextField({
 }
 
 export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }) {
+  const t = useT();
   const [primaryBaseUrl, setPrimaryBaseUrl] = useState(initial.primaryBaseUrl);
   const [primaryModel, setPrimaryModel] = useState(initial.primaryModel);
   const [primaryApiKey, setPrimaryApiKey] = useState("");
@@ -102,7 +104,7 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
       if (!response.ok || body?.ok !== true) {
         setStatus({
           kind: "error",
-          message: body?.message ?? `Saving settings failed with HTTP ${response.status}`,
+          message: body?.message ?? t("settings.saveFailedHttp", { status: response.status }),
         });
         return;
       }
@@ -111,12 +113,13 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
       if (payload.SECONDARY_API_KEY) setSecondaryApiKeySet(true);
       setPrimaryApiKey("");
       setSecondaryApiKey("");
-      setStatus({ kind: "success", message: "Settings saved" });
+      setStatus({ kind: "success", message: t("settings.saved") });
     } catch (error) {
       setStatus({
         kind: "error",
-        message:
-          error instanceof Error ? `Saving settings failed: ${error.message}` : "Saving settings failed",
+        message: t("settings.saveFailed", {
+          detail: error instanceof Error ? error.message : t("errors.unknown"),
+        }),
       });
     }
   }
@@ -125,68 +128,88 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       <fieldset className="flex flex-col gap-4">
         <legend className="text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
-          Primary LLM provider
+          {t("settings.primary")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField label="Base URL" value={primaryBaseUrl} onChange={setPrimaryBaseUrl} placeholder="https://api.example.com/v1" />
-          <TextField label="Model" value={primaryModel} onChange={setPrimaryModel} placeholder="vision-model-name" />
+          <TextField
+            label={t("settings.baseUrl")}
+            value={primaryBaseUrl}
+            onChange={setPrimaryBaseUrl}
+            placeholder="https://api.example.com/v1"
+          />
+          <TextField
+            label={t("settings.model")}
+            value={primaryModel}
+            onChange={setPrimaryModel}
+            placeholder="vision-model-name"
+          />
         </div>
         <TextField
-          label="API key"
+          label={t("settings.apiKey")}
           type="password"
           autoComplete="off"
           value={primaryApiKey}
           onChange={setPrimaryApiKey}
-          placeholder={primaryApiKeySet ? "•••••••• (saved)" : "Not set"}
-          hint="Required. Stored AES-256-GCM encrypted. Leave empty to keep the saved key."
+          placeholder={primaryApiKeySet ? t("settings.apiKeySaved") : t("settings.apiKeyNotSet")}
+          hint={t("settings.apiKeyHint")}
         />
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
         <legend className="text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
-          Secondary LLM provider (optional)
+          {t("settings.secondary")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField label="Base URL" value={secondaryBaseUrl} onChange={setSecondaryBaseUrl} placeholder="https://api.example.com/v1" />
-          <TextField label="Model" value={secondaryModel} onChange={setSecondaryModel} placeholder="vision-model-name" />
+          <TextField
+            label={t("settings.baseUrl")}
+            value={secondaryBaseUrl}
+            onChange={setSecondaryBaseUrl}
+            placeholder="https://api.example.com/v1"
+          />
+          <TextField
+            label={t("settings.model")}
+            value={secondaryModel}
+            onChange={setSecondaryModel}
+            placeholder="vision-model-name"
+          />
         </div>
         <TextField
-          label="API key"
+          label={t("settings.apiKey")}
           type="password"
           autoComplete="off"
           value={secondaryApiKey}
           onChange={setSecondaryApiKey}
-          placeholder={secondaryApiKeySet ? "•••••••• (saved)" : "Not set"}
-          hint="Optional fallback. Clear all secondary fields to remove it; an empty key keeps the saved one."
+          placeholder={secondaryApiKeySet ? t("settings.apiKeySaved") : t("settings.apiKeyNotSet")}
+          hint={t("settings.secondaryHint")}
         />
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
         <legend className="text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
-          Currency
+          {t("settings.currency")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField
-            label="Default currency"
+            label={t("settings.defaultCurrency")}
             value={defaultCurrency}
             onChange={(value) => setDefaultCurrency(value.toUpperCase())}
             placeholder="USD"
             maxLength={3}
-            hint="ISO 4217 code. The one currency invoices can be confirmed into."
+            hint={t("settings.defaultCurrencyHint")}
           />
           <TextField
-            label="Opening balance"
+            label={t("settings.openingBalance")}
             value={openingBalance}
             onChange={setOpeningBalance}
             placeholder="1000.00"
-            hint="Decimal amount; converted to minor units on save."
+            hint={t("settings.openingBalanceHint")}
           />
         </div>
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" disabled={status.kind === "saving"}>
-          {status.kind === "saving" ? "Saving…" : "Save settings"}
+          {status.kind === "saving" ? t("common.saving") : t("settings.save")}
         </Button>
         {status.kind === "success" && (
           <p role="status" className="text-sm font-medium text-emerald-600 dark:text-emerald-400">

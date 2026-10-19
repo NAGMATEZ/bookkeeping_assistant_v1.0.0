@@ -45,9 +45,17 @@ export default async function RootLayout({
       <body className="min-h-full">
         {startup.ok ? (
           <I18nProvider locale={locale}>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[70] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground"
+            >
+              {translate(locale, "nav.skipToContent")}
+            </a>
             <div className="flex min-h-screen w-full">
               <Sidebar initialTheme={theme} />
-              <main className="min-w-0 flex-1 pt-14">{children}</main>
+              <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 pt-14">
+                {children}
+              </main>
             </div>
           </I18nProvider>
         ) : (

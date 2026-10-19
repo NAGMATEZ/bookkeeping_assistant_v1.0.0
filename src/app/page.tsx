@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     getNetMonthlyDelta(),
     getCurrentPositionMinor(),
     getMovingAverageMinor(),
-    getMonthlyBuckets(),
+    getMonthlyBuckets(new Date(), "all"),
   ]);
   const projections = computeProjections(position, movingAverage);
 

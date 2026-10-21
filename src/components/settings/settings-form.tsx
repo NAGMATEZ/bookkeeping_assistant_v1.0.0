@@ -23,7 +23,7 @@ type Status =
   | { kind: "error"; message: string };
 
 const INPUT_CLASS =
-  "h-9 w-full rounded-lg border border-input bg-white px-3 text-sm text-zinc-900 transition-colors placeholder:text-zinc-500 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-400";
+  "h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground";
 
 function TextField({
   label,
@@ -46,7 +46,7 @@ function TextField({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{label}</span>
+      <span className="text-sm font-medium text-foreground">{label}</span>
       <input
         type={type}
         value={value}
@@ -56,7 +56,7 @@ function TextField({
         autoComplete={autoComplete}
         className={INPUT_CLASS}
       />
-      {hint && <span className="text-xs text-zinc-500 dark:text-zinc-400">{hint}</span>}
+      {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
     </label>
   );
 }
@@ -127,7 +127,7 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       <fieldset className="flex flex-col gap-4">
-        <legend className="text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
+        <legend className="text-sm font-semibold tracking-wide text-foreground uppercase">
           {t("settings.primary")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -156,7 +156,7 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className="text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
+        <legend className="text-sm font-semibold tracking-wide text-foreground uppercase">
           {t("settings.secondary")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -185,7 +185,7 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
       </fieldset>
 
       <fieldset className="flex flex-col gap-4">
-        <legend className="text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
+        <legend className="text-sm font-semibold tracking-wide text-foreground uppercase">
           {t("settings.currency")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -212,12 +212,12 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
           {status.kind === "saving" ? t("common.saving") : t("settings.save")}
         </Button>
         {status.kind === "success" && (
-          <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+          <p role="status" className="text-sm font-medium text-positive">
             {status.message}
           </p>
         )}
         {status.kind === "error" && (
-          <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+          <p role="alert" className="text-sm font-medium text-destructive">
             {status.message}
           </p>
         )}

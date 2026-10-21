@@ -71,12 +71,12 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
   return (
     <div className="flex flex-col gap-3">
       {feedback && (
-        <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm font-medium text-destructive">
           {feedback}
         </p>
       )}
       <div
-        className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+        className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm"
         role="region"
         aria-label={t("common.dataTable")}
         tabIndex={0}
@@ -84,12 +84,12 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
         <table className="w-full min-w-[52rem] border-collapse text-sm">
           <caption className="sr-only">{t("transactions.title")}</caption>
           <thead>
-            <tr className="border-b border-zinc-200 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
+            <tr className="border-b border-border bg-muted/40 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase">
               <th className="px-4 py-3">{t("common.date")}</th>
-              <th className="px-4 py-3">{t("common.amount")}</th>
               <th className="px-4 py-3">{t("common.category")}</th>
-              <th className="px-4 py-3">{t("common.project")}</th>
               <th className="px-4 py-3">{t("common.description")}</th>
+              <th className="px-4 py-3">{t("common.project")}</th>
+              <th className="px-4 py-3 text-right">{t("common.amount")}</th>
               <th className="px-4 py-3">{t("common.source")}</th>
               <th className="px-4 py-3">
                 <span className="sr-only">{t("common.actions")}</span>
@@ -100,30 +100,30 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
             {rows.map((row) => {
               const positive = row.amountMinor >= 0;
               return (
-                <tr key={row.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/60">
-                  <td className="px-4 py-3 whitespace-nowrap text-zinc-700 dark:text-zinc-300">{row.date}</td>
+                <tr key={row.id} className="border-b border-border/60 last:border-0">
+                  <td className="px-4 py-3 whitespace-nowrap text-foreground/80">{row.date}</td>
+                  <td className="px-4 py-3 font-medium text-foreground">{row.category}</td>
+                  <td className="px-4 py-3 text-foreground/80">
+                    <span className="block max-w-[16rem] truncate" title={row.description}>
+                      {row.description || t("common.dash")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-foreground/80">
+                    <span className="block max-w-[10rem] truncate" title={row.project}>
+                      {row.project || t("common.dash")}
+                    </span>
+                  </td>
                   <td
                     className={cn(
-                      "px-4 py-3 whitespace-nowrap font-semibold tabular-nums",
+                      "px-4 py-3 whitespace-nowrap text-right font-semibold tabular-nums",
                       positive ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
                     )}
                   >
                     {positive ? "+" : "-"}
                     {formatMoneyAbsolute(row.amountMinor, row.currencyCode, locale)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-900 dark:text-zinc-50">{row.category}</td>
-                  <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                    <span className="block max-w-[10rem] truncate" title={row.project}>
-                      {row.project || t("common.dash")}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                    <span className="block max-w-[16rem] truncate" title={row.description}>
-                      {row.description || t("common.dash")}
-                    </span>
-                  </td>
                   <td className="px-4 py-3">
-                    <span className="inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                    <span className="inline-block rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
                       {t(SOURCE_KEYS[row.source])}
                     </span>
                   </td>

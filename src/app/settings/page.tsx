@@ -40,10 +40,10 @@ export default async function SettingsPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8">
       <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {translate(locale, "settings.title")}
         </h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{translate(locale, "settings.subtitle")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{translate(locale, "settings.subtitle")}</p>
       </header>
 
       {!defaultCurrency && (

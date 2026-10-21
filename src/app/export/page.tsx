@@ -13,24 +13,24 @@ export default async function ExportPage() {
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8">
       <header className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {translate(locale, "export.title")}
         </h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{translate(locale, "export.subtitle")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{translate(locale, "export.subtitle")}</p>
       </header>
 
       <div className="flex flex-wrap gap-3">
         <a
           href="/api/export?format=csv"
           download
-          className="inline-flex h-10 items-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
           {translate(locale, "export.downloadCsv")}
         </a>
         <a
           href="/api/export?format=xlsx"
           download
-          className="inline-flex h-10 items-center rounded-lg border border-input px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="inline-flex h-10 items-center rounded-lg border border-input px-4 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           {translate(locale, "export.downloadXlsx")}
         </a>

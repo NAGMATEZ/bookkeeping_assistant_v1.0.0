@@ -1,5 +1,5 @@
-Current focus: Dark mode and WCAG-oriented accessibility polish complete - dashboard chart, focus/contrast, table regions, skip link, reduced motion; tsc, vitest, lint, and next build green
-Remaining work: none; formal WCAG certification/audit tooling is not part of the repo
+Current focus: Superdesign alignment in progress - dedicated /import route with a three-step upload/mapping/review wizard, sidebar Import entry, and Transactions aligned to the canvas filter card/table/manual-entry layout; dark-mode palette preserved; tsc, 152 vitest tests, lint, and next build green
+Remaining work: align Dashboard and Settings to their canonical Superdesign drafts; add canonical invoice review and Export canvas steps
 
 - [DONE] src/db/schema.ts - 3-table Drizzle schema (invoices, transactions, settings) with net/VAT/gross, content_hash, source_image/MIME, and transaction source - notes: SUBMISSION_NOTES.md #7
 - [DONE] drizzle/0001_version_update.sql - upgrade-in-place migration for the version-update columns and legacy data backfill - notes: SUBMISSION_NOTES.md #7
@@ -26,22 +26,23 @@ Remaining work: none; formal WCAG certification/audit tooling is not part of the
 - [DONE] src/app/settings/page.tsx - real settings, language selector, reset panel, localized UI - notes:
 - [DONE] src/app/api/reset/route.ts - typed-confirmation endpoint that deletes transactions, invoices, settings - notes: SUBMISSION_NOTES.md #14
 - [DONE] src/lib/dates.ts - 1900-2100 calendar validation + YYYYMMDD conversions - notes: SUBMISSION_NOTES.md #5
-- [DONE] src/lib/invoice-parse.ts - Zod contract for net/VAT/gross major/minor inputs, 1e11 cap, zero-decimal correction, fence stripping, line-item consistency flag - notes: SUBMISSION_NOTES.md #9, #10
+- [DONE] src/lib/invoice-parse.ts - Zod contract for invoice and per-line net/VAT/gross major/minor inputs, 1e11 cap, zero-decimal correction, fence stripping, line-item consistency flag, legacy/camelCase-aware stored line-item reader - notes: SUBMISSION_NOTES.md #9, #10
 - [DONE] src/lib/upload-guard.ts - 15MB cap all types + 10/10min per-IP rate limiter - notes: SUBMISSION_NOTES.md #6
-- [DONE] src/lib/invoices.ts - hash dedupe, create/confirm/currency guard/image lookup/delete, filtered list, net/VAT/gross editing synced to linked transaction - notes: SUBMISSION_NOTES.md #7
-- [DONE] src/app/api/invoices/route.ts - upload endpoint (size cap, rate limit, dedupe pre-dispatch, stored source bytes) - notes:
+- [DONE] src/lib/invoices.ts - hash dedupe, create/confirm/currency guard/image lookup/delete, filtered list, canonical snake_case line-item persistence, invoice and per-line net/VAT/gross editing synced to linked transaction - notes: SUBMISSION_NOTES.md #7
+- [DONE] src/app/api/invoices/route.ts - upload endpoint (size cap, rate limit, dedupe pre-dispatch, stored source bytes, per-line net/VAT/gross extraction contract) - notes:
 - [DONE] src/app/api/invoices/[id]/confirm/route.ts - confirm endpoint with server-side currency guard - notes:
-- [DONE] src/app/api/invoices/[id]/route.ts - inline net/VAT/gross edit + delete endpoints - notes:
+- [DONE] src/app/api/invoices/[id]/route.ts - inline invoice and per-line net/VAT/gross edit (legacy amount_minor alias) + delete endpoints - notes:
 - [DONE] src/app/api/invoices/[id]/image/route.ts - streams the stored source image with its MIME type - notes:
 - [DONE] src/components/invoices/invoice-upload-form.tsx - localized wired upload control - notes:
-- [DONE] src/components/invoices/invoice-table.tsx - net/VAT/gross columns, expandable editing, source image preview, delete, mismatch/multicurrency badges - notes: SUBMISSION_NOTES.md #13
-- [DONE] src/app/invoices/page.tsx - real filtered invoice list, upload form, no-data state, currency notice, localized UI - notes:
+- [DONE] src/components/invoices/invoice-table.tsx - invoice totals, editable per-line net/VAT/gross with derived sums and mismatch warnings, always-visible image/PDF source preview, delete, badges - notes: SUBMISSION_NOTES.md #13
+- [DONE] src/app/invoices/page.tsx - real filtered invoice list with parsed detailed line items, upload form, no-data state, currency notice, localized UI - notes:
+- [DONE] tests/invoice-parse.test.ts, tests/invoices.test.ts, tests/invoice-patch-route.test.ts - legacy/detailed line-item parsing, per-line persistence/validation, alias normalization, and PATCH route coverage - notes:
 - [DONE] src/lib/transactions.ts - manual create (source tag + explicit-sign override), filtered list, single-statement delete - notes:
 - [DONE] src/app/api/transactions/route.ts - manual create endpoint with Zod payload - notes:
 - [DONE] src/app/api/transactions/[id]/route.ts - delete endpoint - notes:
 - [DONE] src/components/transactions/manual-entry-form.tsx - localized wired entry with income/expense toggle and signed-amount override - notes:
 - [DONE] src/components/transactions/transaction-table.tsx - absolute colored amounts, source badges, wired delete - notes:
-- [DONE] src/app/transactions/page.tsx - real filtered list, manual form, import wizard, export links - notes:
+- [DONE] src/app/transactions/page.tsx - real filtered list and manual form aligned to the canvas filter card/table/manual-entry layout; import/export moved to their dedicated routes - notes:
 - [DONE] src/lib/import-parse.ts - CSV (delimiter auto-detect, UTF-8/ISO-8859-2) + XLSX first-sheet parsers - notes:
 - [DONE] src/lib/import-map.ts - column mapping + direction precedence (sign < column < override) + skip reporting - notes: SUBMISSION_NOTES.md #8
 - [DONE] src/lib/import-persist.ts - mapped rows persisted with csv/xlsx source in DEFAULT_CURRENCY - notes: SUBMISSION_NOTES.md #8
@@ -49,8 +50,8 @@ Remaining work: none; formal WCAG certification/audit tooling is not part of the
 - [DONE] src/app/api/import/preview/route.ts - 5-row preview + headers - notes:
 - [DONE] src/app/api/import/route.ts - full import with mapping/overrides, source from file extension, reported skips - notes:
 - [DONE] src/app/api/export/route.ts - CSV/XLSX downloads (format query) - notes:
-- [DONE] src/components/import/import-wizard.tsx - localized mapping selects, per-row overrides, wired Import All Rows - notes:
-- [DONE] src/app/import/page.tsx - redirects to /transactions where the import wizard now lives - notes:
+- [DONE] src/components/import/import-wizard.tsx - three-step upload/mapping/review flow with progress indicator, localized mapping selects, per-row overrides, preview table, and wired import - notes:
+- [DONE] src/app/import/page.tsx - dedicated localized import page hosting the three-step wizard - notes:
 - [DONE] src/app/export/page.tsx - dedicated CSV/XLSX export page - notes:
 - [DONE] src/lib/dashboard.ts - pending/net/position/3-month MA/projections + configurable all-history monthly buckets - notes:
 - [DONE] src/components/dashboard/projection-chart.tsx - localized 6M/12M/all history range with 30/60/90 forecast horizon - notes:

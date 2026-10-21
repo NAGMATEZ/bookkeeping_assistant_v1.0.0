@@ -5,7 +5,7 @@ import { InvoiceTable, type InvoiceTableRow } from "@/components/invoices/invoic
 import { InvoiceUploadForm } from "@/components/invoices/invoice-upload-form";
 import { fromDateInt } from "@/lib/dates";
 import { translate } from "@/lib/i18n";
-import { lineItemsMatchTotal } from "@/lib/invoice-parse";
+import { lineItemsMatchTotal, parseStoredLineItems } from "@/lib/invoice-parse";
 import { listInvoices } from "@/lib/invoices";
 import { getLocale, localizedMetadata } from "@/lib/preferences";
 import { resolveSetting } from "@/lib/settings";
@@ -21,7 +21,7 @@ type InvoiceSearchParams = {
 };
 
 const INPUT_CLASS =
-  "h-9 rounded-lg border border-input bg-white px-3 text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50";
+  "h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground";
 
 export default async function InvoicesPage({
   searchParams,
@@ -52,6 +52,7 @@ export default async function InvoicesPage({
     grossMinor: row.gross_minor,
     currencyCode: row.currency_code,
     status: row.status,
+    lineItems: parseStoredLineItems(row.line_items),
     totalMatchesLineItems: lineItemsMatchTotal(row.line_items, row.total_minor),
     hasSourceImage: row.hasSourceImage,
     sourceMime: row.source_image_mime,
@@ -60,10 +61,10 @@ export default async function InvoicesPage({
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {translate(locale, "invoices.title")}
         </h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           {defaultCurrency
             ? translate(locale, "invoices.subtitle", { currency: defaultCurrency })
             : translate(locale, "invoices.subtitleNoCurrency")}
@@ -81,7 +82,7 @@ export default async function InvoicesPage({
       </div>
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "invoices.filterStatus")}
           <select name="status" defaultValue={status ?? ""} className={INPUT_CLASS}>
             <option value="">{translate(locale, "invoices.statusAll")}</option>
@@ -89,7 +90,7 @@ export default async function InvoicesPage({
             <option value="confirmed">{translate(locale, "invoices.statusConfirmed")}</option>
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "common.project")}
           <input
             name="project"
@@ -98,7 +99,7 @@ export default async function InvoicesPage({
             className={INPUT_CLASS}
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "common.vendor")}
           <input
             name="vendor"
@@ -109,20 +110,20 @@ export default async function InvoicesPage({
         </label>
         <button
           type="submit"
-          className="h-9 rounded-lg bg-zinc-900 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="h-9 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
           {translate(locale, "common.filter")}
         </button>
         <Link
           href="/invoices"
-          className="h-9 rounded-lg border border-input px-3 text-sm font-medium leading-9 text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="h-9 rounded-lg border border-input px-3 text-sm font-medium leading-9 text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           {translate(locale, "common.clear")}
         </Link>
       </form>
 
       {tableRows.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+        <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
           {translate(locale, "invoices.empty")}
         </p>
       ) : (

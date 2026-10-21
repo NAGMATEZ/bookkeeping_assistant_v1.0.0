@@ -13,7 +13,7 @@ type Status =
   | { kind: "error"; message: string };
 
 const INPUT_CLASS =
-  "h-9 w-full rounded-lg border border-input bg-white px-3 text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50";
+  "h-9 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground";
 
 export function ManualEntryForm() {
   const router = useRouter();
@@ -78,15 +78,12 @@ export function ManualEntryForm() {
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="grid gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-6 dark:border-zinc-800 dark:bg-zinc-900"
-    >
-      <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+      <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
         {t("manual.date")}
         <input type="date" required value={date} onChange={(event) => setDate(event.target.value)} className={INPUT_CLASS} />
       </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
         {t("manual.amount")}
         <input
           required
@@ -97,7 +94,7 @@ export function ManualEntryForm() {
           className={INPUT_CLASS}
         />
       </label>
-      <div className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <div className="flex flex-col gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
         {t("manual.direction")}
         <div
           role="group"
@@ -109,7 +106,7 @@ export function ManualEntryForm() {
             aria-pressed={!isIncome}
             onClick={() => setIsIncome(false)}
             className={`h-full flex-1 rounded-md text-sm font-medium transition-colors ${
-              !isIncome ? "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300" : "text-zinc-500 dark:text-zinc-400"
+              !isIncome ? "bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300" : "text-muted-foreground"
             }`}
           >
             {t("common.expense")}
@@ -119,30 +116,30 @@ export function ManualEntryForm() {
             aria-pressed={isIncome}
             onClick={() => setIsIncome(true)}
             className={`h-full flex-1 rounded-md text-sm font-medium transition-colors ${
-              isIncome ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" : "text-zinc-500 dark:text-zinc-400"
+              isIncome ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300" : "text-muted-foreground"
             }`}
           >
             {t("common.income")}
           </button>
         </div>
       </div>
-      <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
         {t("manual.category")}
         <input required value={category} onChange={(event) => setCategory(event.target.value)} className={INPUT_CLASS} />
       </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
         {t("manual.project")}
         <input value={project} onChange={(event) => setProject(event.target.value)} className={INPUT_CLASS} />
       </label>
-      <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground sm:col-span-2">
         {t("manual.description")}
         <input value={description} onChange={(event) => setDescription(event.target.value)} className={INPUT_CLASS} />
       </label>
-      <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-6">
+      <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
         <Button type="submit" disabled={status.kind === "saving"}>
           {status.kind === "saving" ? t("common.saving") : t("manual.add")}
         </Button>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">{t("manual.signedHint")}</span>
+        <span className="text-xs text-muted-foreground">{t("manual.signedHint")}</span>
         {status.kind === "success" && (
           <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
             {status.message}

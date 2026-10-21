@@ -11,7 +11,7 @@ vi.hoisted(() => {
 });
 
 import { PATCH } from "@/app/api/invoices/[id]/route";
-import { settings, transactions } from "@/db/schema";
+import { invoices, settings, transactions } from "@/db/schema";
 import { db } from "@/lib/db";
 import { confirmInvoice, createInvoiceFromLlm } from "@/lib/invoices";
 
@@ -71,6 +71,71 @@ describe("PATCH /api/invoices/[id]", () => {
       .where(eq(transactions.source_invoice_id, invoice.id));
     expect(linked).toHaveLength(1);
     expect(linked[0].amount_minor).toBe(-6000);
+  });
+
+  it("replaces line items while keeping the amount response shape", async () => {
+    const { invoice } = await createInvoiceFromLlm({
+      contentHash: "4".repeat(64),
+      rawLlmResponse: invoiceJson(),
+      defaultCurrency: "USD",
+    });
+
+    const response = await callPatch(invoice.id, {
+      line_items: [
+        { description: "  Widget A  ", net_minor: 3000, vat_minor: 810, gross_minor: 3810 },
+        { description: "Widget B", net_minor: 1000, vat_minor: 190 },
+      ],
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      total_minor: 5000,
+      net_minor: 5000,
+      vat_minor: 0,
+      gross_minor: 5000,
+    });
+    const refreshed = await db.select().from(invoices).where(eq(invoices.id, invoice.id));
+    expect(refreshed[0].line_items).toBe(
+      JSON.stringify([
+        { description: "Widget A", net_minor: 3000, vat_minor: 810, gross_minor: 3810 },
+        { description: "Widget B", net_minor: 1000, vat_minor: 190, gross_minor: 1190 },
+      ]),
+    );
+  });
+
+  it("maps the legacy amount_minor alias to net=gross with zero VAT", async () => {
+    const { invoice } = await createInvoiceFromLlm({
+      contentHash: "5".repeat(64),
+      rawLlmResponse: invoiceJson(),
+      defaultCurrency: "USD",
+    });
+
+    const response = await callPatch(invoice.id, {
+      line_items: [{ description: "Legacy line", amount_minor: 5000 }],
+    });
+
+    expect(response.status).toBe(200);
+    const refreshed = await db.select().from(invoices).where(eq(invoices.id, invoice.id));
+    expect(refreshed[0].line_items).toBe(
+      JSON.stringify([
+        { description: "Legacy line", net_minor: 5000, vat_minor: 0, gross_minor: 5000 },
+      ]),
+    );
+  });
+
+  it("rejects an over-long line-item description with a specific message", async () => {
+    const response = await callPatch("any-id", {
+      line_items: [
+        { description: "x".repeat(501), net_minor: 100, vat_minor: 0, gross_minor: 100 },
+      ],
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      message: "Line item 1 description must not exceed 500 characters",
+    });
   });
 
   it("rejects a non-integer total with a specific message", async () => {

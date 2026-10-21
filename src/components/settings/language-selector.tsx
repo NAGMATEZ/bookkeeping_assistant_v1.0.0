@@ -18,11 +18,11 @@ export function LanguageSelector() {
 
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t("settings.language")}</span>
+      <span className="text-sm font-medium text-foreground">{t("settings.language")}</span>
       <select
         value={locale}
         onChange={(event) => switchLocale(event.target.value as Locale)}
-        className="h-9 w-full max-w-xs rounded-lg border border-input bg-white px-3 text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50"
+        className="h-9 w-full max-w-xs rounded-lg border border-input bg-background px-3 text-sm text-foreground"
       >
         {LOCALES.map((option) => (
           <option key={option} value={option}>
@@ -30,7 +30,7 @@ export function LanguageSelector() {
           </option>
         ))}
       </select>
-      <span className="text-xs text-zinc-500 dark:text-zinc-400">{t("settings.languageHint")}</span>
+      <span className="text-xs text-muted-foreground">{t("settings.languageHint")}</span>
     </label>
   );
 }

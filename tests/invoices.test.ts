@@ -77,6 +77,11 @@ describe("createInvoiceFromLlm", () => {
     expect(second.invoice.id).toBe(first.invoice.id);
     expect(first.invoice.content_hash).toBe(hash);
     expect(first.invoice).toMatchObject({ net_minor: 5000, vat_minor: 0, gross_minor: 5000 });
+    expect(first.invoice.line_items).toBe(
+      JSON.stringify([
+        { description: "Widget", net_minor: 5000, vat_minor: 0, gross_minor: 5000 },
+      ]),
+    );
     expect(await invoicesWithContentHash(hash)).toHaveLength(1);
   });
 
@@ -219,6 +224,121 @@ describe("updateInvoiceTotal", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.invoice.gross_minor).toBe(1270);
+  });
+
+  it("replaces stored line items with trimmed descriptions without changing totals", async () => {
+    const { invoice } = await createInvoiceFromLlm({
+      contentHash: "b6".repeat(32),
+      rawLlmResponse: invoiceJson(),
+      defaultCurrency: "USD",
+    });
+
+    const result = await updateInvoiceAmounts(invoice.id, {
+      lineItems: [
+        { description: "  Widget A  ", netMinor: 3000, vatMinor: 0, grossMinor: 3000 },
+        { description: "Widget B", netMinor: 2000, vatMinor: 0, grossMinor: 2000 },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.invoice.line_items).toBe(
+      JSON.stringify([
+        { description: "Widget A", net_minor: 3000, vat_minor: 0, gross_minor: 3000 },
+        { description: "Widget B", net_minor: 2000, vat_minor: 0, gross_minor: 2000 },
+      ]),
+    );
+    expect([
+      result.invoice.total_minor,
+      result.invoice.net_minor,
+      result.invoice.vat_minor,
+      result.invoice.gross_minor,
+    ]).toEqual([5000, 5000, 0, 5000]);
+  });
+
+  it("stores per-line net, VAT and gross amounts", async () => {
+    const { invoice } = await createInvoiceFromLlm({
+      contentHash: "b8".repeat(32),
+      rawLlmResponse: invoiceJson(),
+      defaultCurrency: "USD",
+    });
+
+    const result = await updateInvoiceAmounts(invoice.id, {
+      netMinor: 1000,
+      vatMinor: 270,
+      grossMinor: 1270,
+      lineItems: [
+        { description: " Service ", netMinor: 1000, vatMinor: 270, grossMinor: 1270 },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.invoice.line_items).toBe(
+      JSON.stringify([
+        { description: "Service", net_minor: 1000, vat_minor: 270, gross_minor: 1270 },
+      ]),
+    );
+    expect([
+      result.invoice.total_minor,
+      result.invoice.net_minor,
+      result.invoice.vat_minor,
+      result.invoice.gross_minor,
+    ]).toEqual([1270, 1000, 270, 1270]);
+  });
+
+  it("rejects invalid line items without touching the stored rows", async () => {
+    const { invoice } = await createInvoiceFromLlm({
+      contentHash: "b7".repeat(32),
+      rawLlmResponse: invoiceJson(),
+      defaultCurrency: "USD",
+    });
+    const originalItems = invoice.line_items;
+
+    const emptyDescription = await updateInvoiceAmounts(invoice.id, {
+      lineItems: [{ description: "   ", netMinor: 100, vatMinor: 0, grossMinor: 100 }],
+    });
+    const fractionalAmount = await updateInvoiceAmounts(invoice.id, {
+      lineItems: [{ description: "Widget", netMinor: 1.5, vatMinor: 0, grossMinor: 1.5 }],
+    });
+    const longDescription = await updateInvoiceAmounts(invoice.id, {
+      lineItems: [
+        { description: "x".repeat(501), netMinor: 100, vatMinor: 0, grossMinor: 100 },
+      ],
+    });
+    const tooMany = await updateInvoiceAmounts(invoice.id, {
+      lineItems: Array.from({ length: 201 }, (_, index) => ({
+        description: `Item ${index + 1}`,
+        netMinor: 1,
+        vatMinor: 0,
+        grossMinor: 1,
+      })),
+    });
+
+    expect(emptyDescription).toEqual({
+      ok: false,
+      status: 400,
+      message: "Line item 1 description must not be empty",
+    });
+    expect(fractionalAmount).toEqual({
+      ok: false,
+      status: 400,
+      message:
+        "Line item 1 net amount must be an integer number of minor units not exceeding 100000000000",
+    });
+    expect(longDescription).toEqual({
+      ok: false,
+      status: 400,
+      message: "Line item 1 description must not exceed 500 characters",
+    });
+    expect(tooMany).toEqual({
+      ok: false,
+      status: 400,
+      message: "Line items must not contain more than 200 entries",
+    });
+
+    const refreshed = await db.select().from(invoices).where(eq(invoices.id, invoice.id));
+    expect(refreshed[0].line_items).toBe(originalItems);
   });
 
   it("rejects totals over the cap without touching rows", async () => {

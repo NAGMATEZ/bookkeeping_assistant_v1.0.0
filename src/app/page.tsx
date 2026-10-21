@@ -23,10 +23,10 @@ export async function generateMetadata(): Promise<Metadata> {
 
 function Card({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-      <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">{label}</p>
-      <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">{value}</p>
-      {hint && <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{hint}</p>}
+    <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+      <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{label}</p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+      {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -69,23 +69,23 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {translate(locale, "dashboard.title")}
         </h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           {translate(locale, "dashboard.subtitle", { currency })}
         </p>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             {translate(locale, "dashboard.pendingInvoices")}
           </p>
-          <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
             {pending.total}
           </p>
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             <Link href="/invoices?status=needs_review" className="underline underline-offset-2">
               {translate(locale, "dashboard.reviewInvoices")}
             </Link>
@@ -113,17 +113,17 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <section className="mt-8 rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="mt-8 rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
+          <h2 className="text-sm font-semibold tracking-wide text-foreground uppercase">
             {translate(locale, "dashboard.positionProjections")}
           </h2>
-          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <span className="rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
             {translate(locale, "dashboard.method")}
           </span>
         </div>
         <ProjectionChart history={history} forecast={forecast} currency={currency} locale={locale} />
-        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="mt-3 text-xs text-muted-foreground">
           {translate(locale, "dashboard.footnote")}
         </p>
       </section>

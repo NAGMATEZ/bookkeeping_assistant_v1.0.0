@@ -44,11 +44,19 @@ export type CreateInvoiceInput = {
   sourceImageMime?: string;
 };
 
+export type InvoiceLineItemUpdate = {
+  description: string;
+  netMinor: number;
+  vatMinor: number;
+  grossMinor: number;
+};
+
 export type InvoiceAmountUpdate = {
   totalMinor?: number;
   netMinor?: number;
   vatMinor?: number;
   grossMinor?: number;
+  lineItems?: InvoiceLineItemUpdate[];
 };
 
 export type ConfirmResult =
@@ -137,7 +145,14 @@ export async function createInvoiceFromLlm(
       content_hash: input.contentHash,
       source_image: input.sourceImage ?? null,
       source_image_mime: input.sourceImageMime ?? null,
-      line_items: JSON.stringify(parsed.lineItems),
+      line_items: JSON.stringify(
+        parsed.lineItems.map((item) => ({
+          description: item.description,
+          net_minor: item.netMinor,
+          vat_minor: item.vatMinor,
+          gross_minor: item.grossMinor,
+        })),
+      ),
       raw_llm_response: input.rawLlmResponse,
     })
     .returning();
@@ -204,9 +219,38 @@ export async function confirmInvoice(invoiceId: string): Promise<ConfirmResult> 
   return { ok: true, transaction: created[0] };
 }
 
+const MAX_LINE_ITEMS = 200;
+const MAX_LINE_ITEM_DESCRIPTION_LENGTH = 500;
+
 function validateAmount(label: string, value: number): string | null {
   if (!Number.isInteger(value) || Math.abs(value) > MAX_AMOUNT_MINOR) {
     return `${label} must be an integer number of minor units not exceeding ${MAX_AMOUNT_MINOR}`;
+  }
+  return null;
+}
+
+function validateLineItems(lineItems: InvoiceLineItemUpdate[]): string | null {
+  if (lineItems.length > MAX_LINE_ITEMS) {
+    return `Line items must not contain more than ${MAX_LINE_ITEMS} entries`;
+  }
+  for (const [index, item] of lineItems.entries()) {
+    const position = index + 1;
+    if (item.description.trim() === "") {
+      return `Line item ${position} description must not be empty`;
+    }
+    if (item.description.trim().length > MAX_LINE_ITEM_DESCRIPTION_LENGTH) {
+      return `Line item ${position} description must not exceed ${MAX_LINE_ITEM_DESCRIPTION_LENGTH} characters`;
+    }
+    const amounts: Array<[string, number]> = [
+      ["net amount", item.netMinor],
+      ["VAT amount", item.vatMinor],
+      ["gross amount", item.grossMinor],
+    ];
+    for (const [label, value] of amounts) {
+      if (!Number.isInteger(value) || Math.abs(value) > MAX_AMOUNT_MINOR) {
+        return `Line item ${position} ${label} must be an integer number of minor units not exceeding ${MAX_AMOUNT_MINOR}`;
+      }
+    }
   }
   return null;
 }
@@ -228,6 +272,13 @@ export async function updateInvoiceAmounts(
     const error = validateAmount(label, value);
     if (error) {
       return { ok: false, status: 400, message: error };
+    }
+  }
+
+  if (update.lineItems !== undefined) {
+    const lineItemsError = validateLineItems(update.lineItems);
+    if (lineItemsError) {
+      return { ok: false, status: 400, message: lineItemsError };
     }
   }
 
@@ -255,6 +306,18 @@ export async function updateInvoiceAmounts(
     }
   }
 
+  const persistedLineItems =
+    update.lineItems === undefined
+      ? invoice.line_items
+      : JSON.stringify(
+          update.lineItems.map((item) => ({
+            description: item.description.trim(),
+            net_minor: item.netMinor,
+            vat_minor: item.vatMinor,
+            gross_minor: item.grossMinor,
+          })),
+        );
+
   await db.batch([
     db
       .update(invoices)
@@ -263,6 +326,7 @@ export async function updateInvoiceAmounts(
         net_minor: netMinor,
         vat_minor: vatMinor,
         gross_minor: grossMinor,
+        line_items: persistedLineItems,
       })
       .where(eq(invoices.id, invoiceId)),
     db

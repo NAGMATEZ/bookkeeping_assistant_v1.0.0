@@ -9,6 +9,31 @@ export const MAX_AMOUNT_MINOR = 100_000_000_000;
 
 const KNOWN_CURRENCIES = new Set(Intl.supportedValuesOf("currency"));
 
+const llmLineItemSchema = z
+  .object({
+    description: z.string(),
+    net_minor: z.number().optional(),
+    vat_minor: z.number().optional(),
+    gross_minor: z.number().optional(),
+    // Legacy alias: older prompts asked for a single gross amount per line.
+    amount_minor: z.number().optional(),
+    // Accepted as a fallback for providers that return major units despite the "_minor" contract.
+    net: z.number().optional(),
+    vat: z.number().optional(),
+    gross: z.number().optional(),
+  })
+  .refine(
+    (item) =>
+      item.net_minor !== undefined ||
+      item.vat_minor !== undefined ||
+      item.gross_minor !== undefined ||
+      item.amount_minor !== undefined ||
+      item.net !== undefined ||
+      item.vat !== undefined ||
+      item.gross !== undefined,
+    { message: "Line item must include net, VAT or gross amount" },
+  );
+
 const invoiceLlmOutputSchema = z.object({
   vendor: z.string().min(1),
   date: z.string(),
@@ -21,15 +46,17 @@ const invoiceLlmOutputSchema = z.object({
   vat: z.number().optional(),
   gross: z.number().optional(),
   currency_code: z.string(),
-  line_items: z.array(
-    z.object({
-      description: z.string(),
-      amount_minor: z.number(),
-    }),
-  ),
+  line_items: z.array(llmLineItemSchema),
   suggested_category: z.string().optional().default(""),
   project: z.string().optional().default(""),
 });
+
+export type InvoiceLineItem = {
+  description: string;
+  netMinor: number;
+  vatMinor: number;
+  grossMinor: number;
+};
 
 export type ParsedInvoice = {
   vendor: string;
@@ -39,12 +66,72 @@ export type ParsedInvoice = {
   vatMinor: number;
   grossMinor: number;
   currencyCode: string;
-  lineItems: { description: string; amountMinor: number }[];
+  lineItems: InvoiceLineItem[];
   suggestedCategory: string;
   project: string;
   totalMatchesLineItems: boolean;
   totalsConsistent: boolean;
 };
+
+function readStoredInteger(record: Record<string, unknown>, key: string): number | null {
+  const value = record[key];
+  return typeof value === "number" && Number.isFinite(value) && Number.isInteger(value)
+    ? value
+    : null;
+}
+
+/**
+ * Reads the `line_items` JSON column defensively. The column is written by our own parser, but
+ * legacy rows and manual fixes can contain malformed entries; drop those instead of crashing the
+ * invoice review page. Legacy rows only stored `amount_minor` (gross), so they become net=gross
+ * with zero VAT; new rows carry net/VAT/gross explicitly.
+ */
+export function parseStoredLineItems(lineItemsJson: string): InvoiceLineItem[] {
+  try {
+    const parsed: unknown = JSON.parse(lineItemsJson);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.flatMap((item) => {
+      if (typeof item !== "object" || item === null) {
+        return [];
+      }
+      const record = item as Record<string, unknown>;
+      const description = record.description;
+      if (typeof description !== "string") {
+        return [];
+      }
+
+      // Accept both the persisted snake_case shape and camelCase rows written before serialization
+      // was normalized, so existing invoices become readable without a data migration.
+      const netRaw =
+        readStoredInteger(record, "net_minor") ?? readStoredInteger(record, "netMinor");
+      const vatRaw =
+        readStoredInteger(record, "vat_minor") ?? readStoredInteger(record, "vatMinor");
+      const grossRaw =
+        readStoredInteger(record, "gross_minor") ??
+        readStoredInteger(record, "grossMinor") ??
+        readStoredInteger(record, "amount_minor") ??
+        readStoredInteger(record, "amountMinor");
+
+      let grossMinor: number;
+      if (grossRaw === null) {
+        if (netRaw === null || vatRaw === null) {
+          return [];
+        }
+        grossMinor = netRaw + vatRaw;
+      } else {
+        grossMinor = grossRaw;
+      }
+
+      const netMinor = netRaw ?? (vatRaw === null ? grossMinor : grossMinor - vatRaw);
+      const vatMinor = vatRaw ?? grossMinor - netMinor;
+      return [{ description, netMinor, vatMinor, grossMinor }];
+    });
+  } catch {
+    return [];
+  }
+}
 
 export function extractJsonPayload(raw: string): string {
   const start = raw.indexOf("{");
@@ -99,15 +186,13 @@ export function lineItemsMatchTotal(lineItemsJson: string, totalMinor: number): 
     if (!Array.isArray(parsed)) {
       return false;
     }
-    const amounts = parsed.map((item) =>
-      typeof item === "object" && item !== null
-        ? (item as Record<string, unknown>).amount_minor
-        : undefined,
-    );
-    if (!amounts.every((amount): amount is number => typeof amount === "number")) {
+    const items = parseStoredLineItems(lineItemsJson);
+    if (items.length !== parsed.length) {
       return false;
     }
-    return roundOnceToMinorUnits(sumAmounts(amounts)) === totalMinor;
+    return (
+      roundOnceToMinorUnits(sumAmounts(items.map((item) => item.grossMinor))) === totalMinor
+    );
   } catch {
     return false;
   }
@@ -145,9 +230,49 @@ export function parseInvoiceLlmOutput(raw: string, defaultCurrency: string): Par
     Math.round(amount.value * (amount.major ? 100 : 1) * zeroDecimalCorrection);
 
   const lineItems = output.line_items.map((item) => {
-    const amountMinor = Math.round(item.amount_minor * zeroDecimalCorrection);
-    assertWithinCap(`Line item "${item.description}"`, amountMinor);
-    return { description: item.description, amountMinor };
+    const label = `Line item "${item.description}"`;
+    const netInput = pickAmount(item.net_minor, item.net);
+    const vatInput = pickAmount(item.vat_minor, item.vat);
+    const grossInput =
+      pickAmount(item.gross_minor, item.gross) ?? pickAmount(item.amount_minor, undefined);
+
+    const netScaled = netInput ? toMinor(netInput) : undefined;
+    const vatScaled = vatInput ? toMinor(vatInput) : undefined;
+    const grossScaled = grossInput ? toMinor(grossInput) : undefined;
+
+    let grossMinor: number;
+    if (grossScaled !== undefined) {
+      grossMinor = grossScaled;
+    } else if (netScaled !== undefined && vatScaled !== undefined) {
+      grossMinor = netScaled + vatScaled;
+    } else if (netScaled !== undefined) {
+      grossMinor = netScaled;
+    } else if (vatScaled !== undefined) {
+      grossMinor = vatScaled;
+    } else {
+      throw new Error(`${label} is missing its amount`);
+    }
+
+    const netMinor = netScaled ?? (vatScaled === undefined ? grossMinor : grossMinor - vatScaled);
+    const vatMinor = vatScaled ?? grossMinor - netMinor;
+
+    const legacyOnly =
+      item.gross_minor === undefined &&
+      item.gross === undefined &&
+      item.amount_minor !== undefined &&
+      item.net_minor === undefined &&
+      item.net === undefined &&
+      item.vat_minor === undefined &&
+      item.vat === undefined;
+    if (legacyOnly) {
+      assertWithinCap(label, grossMinor);
+    } else {
+      assertWithinCap(`${label} net`, netMinor);
+      assertWithinCap(`${label} VAT`, vatMinor);
+      assertWithinCap(`${label} gross`, grossMinor);
+    }
+
+    return { description: item.description, netMinor, vatMinor, grossMinor };
   });
 
   const totalMinor = Math.round(output.total_minor * zeroDecimalCorrection);
@@ -187,7 +312,7 @@ export function parseInvoiceLlmOutput(raw: string, defaultCurrency: string): Par
   assertWithinCap("Invoice VAT", vatMinor);
   assertWithinCap("Invoice gross", grossMinor);
 
-  const lineItemSum = roundOnceToMinorUnits(sumAmounts(lineItems.map((item) => item.amountMinor)));
+  const lineItemSum = roundOnceToMinorUnits(sumAmounts(lineItems.map((item) => item.grossMinor)));
 
   return {
     vendor: output.vendor.trim(),

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { ImportWizard } from "@/components/import/import-wizard";
 import { ManualEntryForm } from "@/components/transactions/manual-entry-form";
 import { TransactionTable, type TransactionTableRow } from "@/components/transactions/transaction-table";
 import { fromDateInt, isAllowedCalendarDate } from "@/lib/dates";
@@ -21,7 +20,7 @@ type TransactionSearchParams = {
 };
 
 const INPUT_CLASS =
-  "h-9 rounded-lg border border-input bg-white px-3 text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50";
+  "h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground";
 
 export default async function TransactionsPage({
   searchParams,
@@ -52,20 +51,19 @@ export default async function TransactionsPage({
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {translate(locale, "transactions.title")}
         </h1>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-sm text-muted-foreground">
           {translate(locale, "transactions.subtitle")}
         </p>
       </header>
 
-      <div className="mb-6">
-        <ManualEntryForm />
-      </div>
-
-      <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+      <form
+        method="get"
+        className="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4 shadow-sm"
+      >
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "common.project")}
           <input
             name="project"
@@ -74,7 +72,7 @@ export default async function TransactionsPage({
             className={INPUT_CLASS}
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "common.category")}
           <input
             name="category"
@@ -83,63 +81,42 @@ export default async function TransactionsPage({
             className={INPUT_CLASS}
           />
         </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "transactions.from")}
           <input type="date" name="from" defaultValue={from ?? ""} className={INPUT_CLASS} />
         </label>
-        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "transactions.to")}
           <input type="date" name="to" defaultValue={to ?? ""} className={INPUT_CLASS} />
         </label>
         <button
           type="submit"
-          className="h-9 rounded-lg bg-zinc-900 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="h-9 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
         >
           {translate(locale, "common.filter")}
         </button>
         <Link
           href="/transactions"
-          className="h-9 rounded-lg border border-input px-3 text-sm font-medium leading-9 text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="h-9 rounded-lg border border-input px-3 text-sm font-medium leading-9 text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           {translate(locale, "common.clear")}
         </Link>
       </form>
 
       {tableRows.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+        <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
           {translate(locale, "transactions.empty")}
         </p>
       ) : (
         <TransactionTable rows={tableRows} />
       )}
 
-      <section className="mt-10">
-        <h2 className="mb-3 text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
-          {translate(locale, "transactions.importSection")}
-        </h2>
-        <ImportWizard />
-      </section>
-
-      <section className="mt-10">
-        <h2 className="mb-3 text-sm font-semibold tracking-wide text-zinc-900 uppercase dark:text-zinc-50">
-          {translate(locale, "transactions.exportSection")}
-        </h2>
-        <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">{translate(locale, "transactions.exportHint")}</p>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="/api/export?format=csv"
-            download
-            className="inline-flex h-9 items-center rounded-lg bg-zinc-900 px-3 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-          >
-            {translate(locale, "transactions.downloadCsv")}
-          </a>
-          <a
-            href="/api/export?format=xlsx"
-            download
-            className="inline-flex h-9 items-center rounded-lg border border-input px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            {translate(locale, "transactions.downloadXlsx")}
-          </a>
+      <section className="mt-6 rounded-xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-6 py-4">
+          <h2 className="text-base font-semibold text-foreground">{translate(locale, "manual.title")}</h2>
+        </div>
+        <div className="p-6">
+          <ManualEntryForm />
         </div>
       </section>
     </div>

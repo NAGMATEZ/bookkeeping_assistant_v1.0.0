@@ -53,13 +53,13 @@ export function ProjectionChart({
     <div className="w-full">
       <div className="mb-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <span className="text-xs font-medium text-muted-foreground">
             {t("dashboard.historyRange")}
           </span>
           <div
             role="group"
             aria-label={t("dashboard.historyRange")}
-            className="inline-flex rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-800"
+            className="inline-flex rounded-lg border border-border p-0.5"
           >
             {HISTORY_RANGES.map((option) => (
               <button
@@ -70,8 +70,8 @@ export function ProjectionChart({
                 className={cn(
                   "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                   historyRange === option.key
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800",
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
                 {t(option.label)}
@@ -80,13 +80,13 @@ export function ProjectionChart({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <span className="text-xs font-medium text-muted-foreground">
             {t("dashboard.forecastRange")}
           </span>
           <div
             role="group"
             aria-label={t("dashboard.forecastRange")}
-            className="inline-flex rounded-lg border border-zinc-200 p-0.5 dark:border-zinc-800"
+            className="inline-flex rounded-lg border border-border p-0.5"
           >
             {HORIZONS.map((option) => (
               <button
@@ -97,8 +97,8 @@ export function ProjectionChart({
                 className={cn(
                   "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
                   horizon === option
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                    : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800",
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 )}
               >
                 {t("dashboard.days", { count: option })}
@@ -107,7 +107,7 @@ export function ProjectionChart({
           </div>
         </div>
       </div>
-      <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-zinc-600 dark:text-zinc-400">
+      <div className="mb-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-2">
           <svg width="28" height="8" aria-hidden="true">
             <line x1="0" y1="4" x2="28" y2="4" stroke="var(--chart-line)" strokeWidth="2" />

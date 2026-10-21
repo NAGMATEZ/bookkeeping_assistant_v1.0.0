@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { useLocale, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
+import type { InvoiceLineItem } from "@/lib/invoice-parse";
 import { minorUnitsToDecimal, parseDecimalToMinorUnits } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
@@ -20,16 +21,82 @@ export type InvoiceTableRow = {
   grossMinor: number;
   currencyCode: string;
   status: "needs_review" | "confirmed";
+  lineItems: InvoiceLineItem[];
   totalMatchesLineItems: boolean;
   hasSourceImage: boolean;
   sourceMime: string | null;
 };
 
 type Feedback = { kind: "error" | "success"; message: string } | null;
-type Draft = { net: string; vat: string; gross: string };
+type LineDraft = { description: string; net: string; vat: string; gross: string };
+type Draft = { net: string; vat: string; gross: string; lineItems: LineDraft[] };
+type LineSums = { netMinor: number; vatMinor: number; grossMinor: number };
 
 const AMOUNT_INPUT =
-  "h-8 w-28 rounded-lg border border-input bg-white px-2 text-right text-sm text-zinc-900 dark:bg-zinc-900 dark:text-zinc-50";
+  "h-8 w-28 rounded-lg border border-input bg-background px-2 text-right text-sm text-foreground";
+const LINE_DESCRIPTION_INPUT =
+  "h-8 min-w-0 w-full rounded-lg border border-input bg-background px-2 text-sm text-foreground";
+const LINE_AMOUNT_INPUT =
+  "h-8 w-full rounded-lg border border-input bg-background px-2 text-right text-sm text-foreground";
+
+function isBlankLine(item: LineDraft): boolean {
+  return (
+    item.description.trim() === "" &&
+    item.net.trim() === "" &&
+    item.vat.trim() === "" &&
+    item.gross.trim() === ""
+  );
+}
+
+function lineItemSums(lineItems: LineDraft[]): LineSums | null {
+  const sums: LineSums = { netMinor: 0, vatMinor: 0, grossMinor: 0 };
+  for (const item of lineItems) {
+    if (isBlankLine(item)) {
+      continue;
+    }
+    try {
+      sums.netMinor += parseDecimalToMinorUnits(item.net);
+      sums.vatMinor += parseDecimalToMinorUnits(item.vat);
+      sums.grossMinor += parseDecimalToMinorUnits(item.gross);
+    } catch {
+      return null;
+    }
+  }
+  return sums;
+}
+
+function lineItemMismatch(item: LineDraft): boolean {
+  if (isBlankLine(item)) {
+    return false;
+  }
+  try {
+    return (
+      parseDecimalToMinorUnits(item.net) + parseDecimalToMinorUnits(item.vat) !==
+      parseDecimalToMinorUnits(item.gross)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function lineItemsMismatch(draft: Draft): boolean {
+  if (draft.lineItems.length === 0) {
+    return false;
+  }
+  const sums = lineItemSums(draft.lineItems);
+  if (sums === null) {
+    return false;
+  }
+  try {
+    return (
+      sums.netMinor !== parseDecimalToMinorUnits(draft.net) ||
+      sums.vatMinor !== parseDecimalToMinorUnits(draft.vat) ||
+      sums.grossMinor !== parseDecimalToMinorUnits(draft.gross)
+    );
+  } catch {
+    return false;
+  }
+}
 
 function draftMismatch(draft: Draft): boolean {
   const toNumber = (value: string) => Number(value.replace(",", "."));
@@ -55,24 +122,80 @@ export function InvoiceTable({
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [showSource, setShowSource] = useState<Record<string, boolean>>({});
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
 
-  function draftFor(row: InvoiceTableRow): Draft {
-    return (
-      drafts[row.id] ?? {
-        net: minorUnitsToDecimal(row.netMinor),
-        vat: minorUnitsToDecimal(row.vatMinor),
-        gross: minorUnitsToDecimal(row.grossMinor),
-      }
-    );
+  function buildDraft(row: InvoiceTableRow): Draft {
+    return {
+      net: minorUnitsToDecimal(row.netMinor),
+      vat: minorUnitsToDecimal(row.vatMinor),
+      gross: minorUnitsToDecimal(row.grossMinor),
+      lineItems: row.lineItems.map((item) => ({
+        description: item.description,
+        net: minorUnitsToDecimal(item.netMinor),
+        vat: minorUnitsToDecimal(item.vatMinor),
+        gross: minorUnitsToDecimal(item.grossMinor),
+      })),
+    };
   }
 
-  function updateDraft(row: InvoiceTableRow, field: keyof Draft, value: string): void {
+  function draftFor(row: InvoiceTableRow): Draft {
+    return drafts[row.id] ?? buildDraft(row);
+  }
+
+  function updateDraft(row: InvoiceTableRow, field: keyof Omit<Draft, "lineItems">, value: string): void {
     setDrafts((current) => ({
       ...current,
-      [row.id]: { ...draftFor(row), [field]: value },
+      [row.id]: { ...(current[row.id] ?? buildDraft(row)), [field]: value },
     }));
+  }
+
+  function updateLineItem(
+    row: InvoiceTableRow,
+    index: number,
+    field: keyof LineDraft,
+    value: string,
+  ): void {
+    setDrafts((current) => {
+      const draft = current[row.id] ?? buildDraft(row);
+      return {
+        ...current,
+        [row.id]: {
+          ...draft,
+          lineItems: draft.lineItems.map((item, itemIndex) =>
+            itemIndex === index ? { ...item, [field]: value } : item,
+          ),
+        },
+      };
+    });
+  }
+
+  function addLineItem(row: InvoiceTableRow): void {
+    setDrafts((current) => {
+      const draft = current[row.id] ?? buildDraft(row);
+      return {
+        ...current,
+        [row.id]: {
+          ...draft,
+          lineItems: [
+            ...draft.lineItems,
+            { description: "", net: "", vat: "", gross: "" },
+          ],
+        },
+      };
+    });
+  }
+
+  function removeLineItem(row: InvoiceTableRow, index: number): void {
+    setDrafts((current) => {
+      const draft = current[row.id] ?? buildDraft(row);
+      return {
+        ...current,
+        [row.id]: {
+          ...draft,
+          lineItems: draft.lineItems.filter((_, itemIndex) => itemIndex !== index),
+        },
+      };
+    });
   }
 
   async function confirmInvoice(row: InvoiceTableRow) {
@@ -124,12 +247,49 @@ export function InvoiceTable({
       return;
     }
 
+    const lineItems: InvoiceLineItem[] = [];
+    for (const item of draft.lineItems) {
+      if (isBlankLine(item)) {
+        continue;
+      }
+      if (item.description.trim() === "") {
+        setFeedback({ kind: "error", message: t("invoices.lineDescriptionRequired") });
+        return;
+      }
+      try {
+        lineItems.push({
+          description: item.description.trim(),
+          netMinor: parseDecimalToMinorUnits(item.net),
+          vatMinor: parseDecimalToMinorUnits(item.vat),
+          grossMinor: parseDecimalToMinorUnits(item.gross),
+        });
+      } catch (error) {
+        setFeedback({
+          kind: "error",
+          message: t("invoices.invalidLineAmount", {
+            detail: error instanceof Error ? error.message : t("errors.unknown"),
+          }),
+        });
+        return;
+      }
+    }
+
     setPendingId(row.id);
     try {
       const response = await fetch(`/api/invoices/${row.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ net_minor: netMinor, vat_minor: vatMinor, gross_minor: grossMinor }),
+        body: JSON.stringify({
+          net_minor: netMinor,
+          vat_minor: vatMinor,
+          gross_minor: grossMinor,
+          line_items: lineItems.map((item) => ({
+            description: item.description,
+            net_minor: item.netMinor,
+            vat_minor: item.vatMinor,
+            gross_minor: item.grossMinor,
+          })),
+        }),
       });
       const body = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
       if (!response.ok || body?.ok !== true) {
@@ -204,7 +364,7 @@ export function InvoiceTable({
       )}
 
       <div
-        className="overflow-x-auto rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+        className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm"
         role="region"
         aria-label={t("common.dataTable")}
         tabIndex={0}
@@ -212,7 +372,7 @@ export function InvoiceTable({
         <table className="w-full min-w-[68rem] border-collapse text-sm">
           <caption className="sr-only">{t("invoices.title")}</caption>
           <thead>
-            <tr className="border-b border-zinc-200 text-left text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
+            <tr className="border-b border-border text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase">
               <th className="px-4 py-3">{t("common.date")}</th>
               <th className="px-4 py-3">{t("common.vendor")}</th>
               <th className="px-4 py-3">{t("common.project")}</th>
@@ -229,30 +389,30 @@ export function InvoiceTable({
               const expanded = expandedId === row.id;
 
               return (
-                <tr key={row.id} className="border-b border-zinc-100 last:border-0 dark:border-zinc-800/60">
-                  <td className="px-4 py-3 whitespace-nowrap text-zinc-700 dark:text-zinc-300">{row.date}</td>
-                  <td className="px-4 py-3 text-zinc-900 dark:text-zinc-50">
+                <tr key={row.id} className="border-b border-border/60 last:border-0">
+                  <td className="px-4 py-3 whitespace-nowrap text-foreground/80">{row.date}</td>
+                  <td className="px-4 py-3 text-foreground">
                     <span className="block max-w-[14rem] truncate" title={row.vendor}>
                       {row.vendor}
                     </span>
-                    {!row.totalMatchesLineItems && (
+                    {row.lineItems.length > 0 && !row.totalMatchesLineItems && (
                       <span className="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[0.68rem] font-medium text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
-                        {t("invoices.mismatch")}
+                        {t("invoices.lineItemsMismatch")}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-zinc-700 dark:text-zinc-300">
+                  <td className="px-4 py-3 text-foreground/80">
                     <span className="block max-w-[10rem] truncate" title={row.project}>
                       {row.project || t("common.dash")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right tabular-nums text-zinc-700 dark:text-zinc-300">
+                  <td className="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground/80">
                     {formatMoney(row.netMinor, row.currencyCode, locale)}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right tabular-nums text-zinc-700 dark:text-zinc-300">
+                  <td className="px-4 py-3 whitespace-nowrap text-right tabular-nums text-foreground/80">
                     {formatMoney(row.vatMinor, row.currencyCode, locale)}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-right font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                  <td className="px-4 py-3 whitespace-nowrap text-right font-medium tabular-nums text-foreground">
                     {formatMoney(row.grossMinor || row.totalMinor, row.currencyCode, locale)}
                   </td>
                   <td className="px-4 py-3">
@@ -330,95 +490,238 @@ export function InvoiceTable({
                 return null;
               }
               const draft = draftFor(row);
-              const sourceShown = showSource[row.id] === true;
+              const lineSums = lineItemSums(draft.lineItems);
+              const sourceHref = `/api/invoices/${row.id}/image`;
               return (
                 <tr
                   key={`${row.id}-details`}
                   id={`invoice-details-${row.id}`}
-                  className="border-b border-zinc-100 bg-zinc-50/70 last:border-0 dark:border-zinc-800/60 dark:bg-zinc-950/40"
+                  className="border-b border-border/60 bg-muted/40 last:border-0"
                 >
                   <td colSpan={8} className="px-4 py-5">
-                    <div className="grid gap-6 lg:grid-cols-2">
-                      <form onSubmit={(event) => saveAmounts(event, row)} className="space-y-3">
-                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                          {t("invoices.totals")}
-                        </h3>
-                        <div className="grid gap-3 sm:grid-cols-3">
-                          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                            {t("common.net")}
-                            <input
-                              inputMode="decimal"
-                              value={draft.net}
-                              onChange={(event) => updateDraft(row, "net", event.target.value)}
-                              className={AMOUNT_INPUT}
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                            {t("common.vat")}
-                            <input
-                              inputMode="decimal"
-                              value={draft.vat}
-                              onChange={(event) => updateDraft(row, "vat", event.target.value)}
-                              className={AMOUNT_INPUT}
-                            />
-                          </label>
-                          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                            {t("common.gross")}
-                            <input
-                              inputMode="decimal"
-                              value={draft.gross}
-                              onChange={(event) => updateDraft(row, "gross", event.target.value)}
-                              className={AMOUNT_INPUT}
-                            />
-                          </label>
-                        </div>
-                        {draftMismatch(draft) && (
-                          <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                            {t("invoices.mismatch")}
-                          </p>
-                        )}
-                        <Button type="submit" size="sm" disabled={pendingId === row.id}>
-                          {t("invoices.saveDetails")}
-                        </Button>
+                    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+                      <form onSubmit={(event) => saveAmounts(event, row)} className="space-y-5">
+                        <section className="space-y-3">
+                          <div>
+                            <h3 className="text-sm font-semibold text-foreground">
+                              {t("invoices.lineItems")}
+                            </h3>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {t("invoices.lineItemsHelper")}
+                            </p>
+                          </div>
+                          {draft.lineItems.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">{t("invoices.noLines")}</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {draft.lineItems.map((item, index) => (
+                                <div
+                                  key={index}
+                                  className="space-y-2 rounded-lg border border-border/70 bg-background/60 p-2.5"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="text"
+                                      value={item.description}
+                                      onChange={(event) =>
+                                        updateLineItem(row, index, "description", event.target.value)
+                                      }
+                                      aria-label={t("invoices.lineDescription")}
+                                      placeholder={t("invoices.lineDescription")}
+                                      className={LINE_DESCRIPTION_INPUT}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => removeLineItem(row, index)}
+                                      aria-label={t("common.remove")}
+                                      title={t("common.remove")}
+                                      className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <label className="flex flex-col gap-1 text-[0.68rem] font-medium text-muted-foreground">
+                                      {t("invoices.lineNet")}
+                                      <input
+                                        inputMode="decimal"
+                                        value={item.net}
+                                        onChange={(event) =>
+                                          updateLineItem(row, index, "net", event.target.value)
+                                        }
+                                        aria-label={t("invoices.lineNet")}
+                                        className={LINE_AMOUNT_INPUT}
+                                      />
+                                    </label>
+                                    <label className="flex flex-col gap-1 text-[0.68rem] font-medium text-muted-foreground">
+                                      {t("invoices.lineVat")}
+                                      <input
+                                        inputMode="decimal"
+                                        value={item.vat}
+                                        onChange={(event) =>
+                                          updateLineItem(row, index, "vat", event.target.value)
+                                        }
+                                        aria-label={t("invoices.lineVat")}
+                                        className={LINE_AMOUNT_INPUT}
+                                      />
+                                    </label>
+                                    <label className="flex flex-col gap-1 text-[0.68rem] font-medium text-muted-foreground">
+                                      {t("invoices.lineGross")}
+                                      <input
+                                        inputMode="decimal"
+                                        value={item.gross}
+                                        onChange={(event) =>
+                                          updateLineItem(row, index, "gross", event.target.value)
+                                        }
+                                        aria-label={t("invoices.lineGross")}
+                                        className={LINE_AMOUNT_INPUT}
+                                      />
+                                    </label>
+                                  </div>
+                                  {lineItemMismatch(item) && (
+                                    <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                                      {t("invoices.lineItemMismatch")}
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <Button type="button" variant="outline" size="sm" onClick={() => addLineItem(row)}>
+                            + {t("invoices.addLine")}
+                          </Button>
+                          {draft.lineItems.length > 0 && (
+                            <div className="space-y-1">
+                              <p className="text-xs font-medium text-muted-foreground">
+                                {t("invoices.lineItemsSum")}
+                              </p>
+                              <div className="grid gap-2 sm:grid-cols-3">
+                                <div className="rounded-lg bg-muted px-3 py-2">
+                                  <span className="block text-[0.68rem] font-medium uppercase text-muted-foreground">
+                                    {t("common.net")}
+                                  </span>
+                                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                                    {lineSums === null
+                                      ? t("common.dash")
+                                      : formatMoney(lineSums.netMinor, row.currencyCode, locale)}
+                                  </span>
+                                </div>
+                                <div className="rounded-lg bg-muted px-3 py-2">
+                                  <span className="block text-[0.68rem] font-medium uppercase text-muted-foreground">
+                                    {t("common.vat")}
+                                  </span>
+                                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                                    {lineSums === null
+                                      ? t("common.dash")
+                                      : formatMoney(lineSums.vatMinor, row.currencyCode, locale)}
+                                  </span>
+                                </div>
+                                <div className="rounded-lg bg-muted px-3 py-2">
+                                  <span className="block text-[0.68rem] font-medium uppercase text-muted-foreground">
+                                    {t("common.gross")}
+                                  </span>
+                                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                                    {lineSums === null
+                                      ? t("common.dash")
+                                      : formatMoney(lineSums.grossMinor, row.currencyCode, locale)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {lineItemsMismatch(draft) && (
+                            <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                              {t("invoices.lineItemsTotalsMismatch")}
+                            </p>
+                          )}
+                        </section>
+
+                        <section className="space-y-3">
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {t("invoices.totals")}
+                          </h3>
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+                              {t("common.net")}
+                              <input
+                                inputMode="decimal"
+                                value={draft.net}
+                                onChange={(event) => updateDraft(row, "net", event.target.value)}
+                                className={AMOUNT_INPUT}
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+                              {t("common.vat")}
+                              <input
+                                inputMode="decimal"
+                                value={draft.vat}
+                                onChange={(event) => updateDraft(row, "vat", event.target.value)}
+                                className={AMOUNT_INPUT}
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
+                              {t("common.gross")}
+                              <input
+                                inputMode="decimal"
+                                value={draft.gross}
+                                onChange={(event) => updateDraft(row, "gross", event.target.value)}
+                                className={AMOUNT_INPUT}
+                              />
+                            </label>
+                          </div>
+                          {draftMismatch(draft) && (
+                            <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                              {t("invoices.mismatch")}
+                            </p>
+                          )}
+                          <Button type="submit" size="sm" disabled={pendingId === row.id}>
+                            {t("invoices.saveDetails")}
+                          </Button>
+                        </section>
                       </form>
 
                       <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                        <h3 className="text-sm font-semibold text-foreground">
                           {t("invoices.sourceImage")}
                         </h3>
                         {row.hasSourceImage ? (
                           <>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                setShowSource((current) => ({ ...current, [row.id]: !sourceShown }))
-                              }
-                            >
-                              {sourceShown ? t("invoices.hideSource") : t("invoices.showSource")}
-                            </Button>
-                            {sourceShown &&
-                              (row.sourceMime?.startsWith("image/") ? (
+                            <div className="overflow-hidden rounded-lg border border-border bg-muted/40">
+                              {row.sourceMime?.startsWith("image/") ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
-                                  src={`/api/invoices/${row.id}/image`}
+                                  src={sourceHref}
                                   alt={t("invoices.sourceImage")}
-                                  className="max-h-96 w-auto rounded-lg border border-zinc-200 object-contain dark:border-zinc-700"
+                                  className="max-h-[32rem] w-full object-contain"
+                                />
+                              ) : row.sourceMime === "application/pdf" ? (
+                                <iframe
+                                  src={sourceHref}
+                                  title={t("invoices.sourceImage")}
+                                  className="h-[32rem] w-full bg-background"
                                 />
                               ) : (
-                                <a
-                                  href={`/api/invoices/${row.id}/image`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="block text-sm font-medium text-sky-700 underline underline-offset-2 dark:text-sky-400"
-                                >
-                                  {t("invoices.showSource")}
-                                </a>
-                              ))}
+                                <p className="p-4 text-sm text-muted-foreground">
+                                  {t("invoices.sourceUnavailable")}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-xs text-muted-foreground">
+                                {t("invoices.sourceHint")}
+                              </p>
+                              <a
+                                href={sourceHref}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="shrink-0 text-xs font-medium text-sky-700 underline underline-offset-2 dark:text-sky-400"
+                              >
+                                {t("invoices.openSource")}
+                              </a>
+                            </div>
                           </>
                         ) : (
-                          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          <p className="text-sm text-muted-foreground">
                             {t("invoices.sourceUnavailable")}
                           </p>
                         )}

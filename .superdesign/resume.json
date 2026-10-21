@@ -1,0 +1,245 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "/": {
+      "targetKind": "existing-ui",
+      "projectId": "d6e68cb1-f9c2-46e9-9474-e0e88973f283",
+      "baselineDraftId": "706fc33f-75cc-45f4-93eb-94c66263d8ad",
+      "activeDraftId": "706fc33f-75cc-45f4-93eb-94c66263d8ad",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/app/globals.css",
+        "src/app/layout.tsx",
+        "src/components/layout/sidebar.tsx",
+        "src/components/layout/i18n-provider.tsx",
+        "src/app/page.tsx",
+        "src/components/dashboard/projection-chart.tsx",
+        "src/lib/dashboard.ts",
+        "src/lib/format.ts",
+        "src/lib/preferences.ts",
+        "src/lib/settings.ts",
+        "src/lib/i18n.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "8450aef28e18cbd88e3e3d35a44dd2b080a1b0b31c15a1cf6b3b4030960c1e44",
+        "src/app/globals.css": "af0a016338b3dda182b4ac3546a9b208e2b4f094671a87604e3bf5c1e7ffcbab",
+        "src/app/layout.tsx": "09c57f3565d5354691ca94485f4926d6c1f1878f20ce2c6e01f47e4d2b31ef8b",
+        "src/components/layout/sidebar.tsx": "00f19df1f019a653a5e2e30a71f860ade624e225f1db7126ba9314e1805ace60",
+        "src/components/layout/i18n-provider.tsx": "b35c6faf59b7343c9a2d9953db1ae6e78048e9a922489ac8eee2aa76c619be96",
+        "src/app/page.tsx": "c921d7fa94955425d5d82582bf414138d4ea955266a34a019f765021c695387d",
+        "src/components/dashboard/projection-chart.tsx": "fd57bfafa597346dd60acc81800727ef5c89bf572af96a1c4a3c23666816d0bb",
+        "src/lib/dashboard.ts": "41ed301e0a4b71411ca65676b789a69be3c6ae136966d29ab27548fca8cb6c4d",
+        "src/lib/format.ts": "f2d054466dd84a441cefc3e8991189a8462c7eed3ad1d562024615d13976a364",
+        "src/lib/preferences.ts": "b48539fdbbefb960348473f458e5d40db694a7c383783bde0b8fae608e0b04a5",
+        "src/lib/settings.ts": "a16826739961638b288d56eda665d3dfb65ed757dbddad9c7a446bf4e76db63d",
+        "src/lib/i18n.ts": "717e6e6f6781d14f84f01a093e8052821ffe0b5ad3ace5f461f39ecdca80373e"
+      },
+      "components": [],
+      "drafts": {
+        "706fc33f-75cc-45f4-93eb-94c66263d8ad": {
+          "title": "Financial Sidekick Dashboard",
+          "visualDirection": "Canonical canvas dashboard; app dark-mode palette preserved",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-10-21T21:00:00.000Z"
+    },
+    "/invoices": {
+      "targetKind": "existing-ui",
+      "projectId": "d6e68cb1-f9c2-46e9-9474-e0e88973f283",
+      "baselineDraftId": "b13b8fba-397a-44dd-b644-1b61d33f5a1f",
+      "activeDraftId": "b13b8fba-397a-44dd-b644-1b61d33f5a1f",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/app/globals.css",
+        "src/app/layout.tsx",
+        "src/components/layout/sidebar.tsx",
+        "src/components/layout/i18n-provider.tsx",
+        "src/app/invoices/page.tsx",
+        "src/components/invoices/invoice-table.tsx",
+        "src/components/invoices/invoice-upload-form.tsx",
+        "src/components/ui/button.tsx",
+        "src/lib/i18n.ts",
+        "src/lib/format.ts",
+        "src/lib/money.ts",
+        "src/lib/utils.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "8450aef28e18cbd88e3e3d35a44dd2b080a1b0b31c15a1cf6b3b4030960c1e44",
+        "src/app/globals.css": "af0a016338b3dda182b4ac3546a9b208e2b4f094671a87604e3bf5c1e7ffcbab",
+        "src/app/layout.tsx": "09c57f3565d5354691ca94485f4926d6c1f1878f20ce2c6e01f47e4d2b31ef8b",
+        "src/components/layout/sidebar.tsx": "00f19df1f019a653a5e2e30a71f860ade624e225f1db7126ba9314e1805ace60",
+        "src/components/layout/i18n-provider.tsx": "b35c6faf59b7343c9a2d9953db1ae6e78048e9a922489ac8eee2aa76c619be96",
+        "src/app/invoices/page.tsx": "41d6544a073ff46eb92631ee91c8079a981e4227b680cf3865e1a237b18242c6",
+        "src/components/invoices/invoice-table.tsx": "2da302a1eb94362fdd43ed5843bb96c81f679cfc6a4986a4147ef4d96c16854f",
+        "src/components/invoices/invoice-upload-form.tsx": "0c2de91880b9cf5945bd0f168ece2c30f600f63133415270a32ead4607eff39b",
+        "src/components/ui/button.tsx": "9ad96c33e516f557304790a53093d0264ae25467a7dae867c9125d15327d7983",
+        "src/lib/i18n.ts": "717e6e6f6781d14f84f01a093e8052821ffe0b5ad3ace5f461f39ecdca80373e",
+        "src/lib/format.ts": "f2d054466dd84a441cefc3e8991189a8462c7eed3ad1d562024615d13976a364",
+        "src/lib/money.ts": "a25903ce034c8db49038aedd03427eb0306261e85c2c226e296d50a90327e4ea",
+        "src/lib/utils.ts": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d"
+      },
+      "components": [],
+      "drafts": {
+        "b13b8fba-397a-44dd-b644-1b61d33f5a1f": {
+          "title": "Financial Sidekick - Invoices",
+          "visualDirection": "Canonical invoices screen; app dark-mode palette preserved",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-10-21T21:00:00.000Z"
+    },
+    "/transactions": {
+      "targetKind": "existing-ui",
+      "projectId": "d6e68cb1-f9c2-46e9-9474-e0e88973f283",
+      "baselineDraftId": "1c556e4c-d090-49b7-922f-513b17d49de5",
+      "activeDraftId": "1c556e4c-d090-49b7-922f-513b17d49de5",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/app/globals.css",
+        "src/app/layout.tsx",
+        "src/components/layout/sidebar.tsx",
+        "src/components/layout/i18n-provider.tsx",
+        "src/app/transactions/page.tsx",
+        "src/components/transactions/transaction-table.tsx",
+        "src/components/transactions/manual-entry-form.tsx",
+        "src/components/ui/button.tsx",
+        "src/lib/i18n.ts",
+        "src/lib/format.ts",
+        "src/lib/money.ts",
+        "src/lib/utils.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "8450aef28e18cbd88e3e3d35a44dd2b080a1b0b31c15a1cf6b3b4030960c1e44",
+        "src/app/globals.css": "af0a016338b3dda182b4ac3546a9b208e2b4f094671a87604e3bf5c1e7ffcbab",
+        "src/app/layout.tsx": "09c57f3565d5354691ca94485f4926d6c1f1878f20ce2c6e01f47e4d2b31ef8b",
+        "src/components/layout/sidebar.tsx": "00f19df1f019a653a5e2e30a71f860ade624e225f1db7126ba9314e1805ace60",
+        "src/components/layout/i18n-provider.tsx": "b35c6faf59b7343c9a2d9953db1ae6e78048e9a922489ac8eee2aa76c619be96",
+        "src/app/transactions/page.tsx": "7ac012108acdfdb1833d4129d0f9267ae996679fbc6df5ae6e275fa9ddbc267d",
+        "src/components/transactions/transaction-table.tsx": "7bd66f781070fb4f468f87266643e20e94da96bd399f9dee950d4e8403b4a9e9",
+        "src/components/transactions/manual-entry-form.tsx": "cb0e05fadaba97ad28faa3374b2f3a4223dc8c8f4267d6895ee6b512b7b24940",
+        "src/components/ui/button.tsx": "9ad96c33e516f557304790a53093d0264ae25467a7dae867c9125d15327d7983",
+        "src/lib/i18n.ts": "717e6e6f6781d14f84f01a093e8052821ffe0b5ad3ace5f461f39ecdca80373e",
+        "src/lib/format.ts": "f2d054466dd84a441cefc3e8991189a8462c7eed3ad1d562024615d13976a364",
+        "src/lib/money.ts": "a25903ce034c8db49038aedd03427eb0306261e85c2c226e296d50a90327e4ea",
+        "src/lib/utils.ts": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d"
+      },
+      "components": [],
+      "drafts": {
+        "1c556e4c-d090-49b7-922f-513b17d49de5": {
+          "title": "Financial Sidekick - Transactions",
+          "visualDirection": "Canonical transactions screen; app dark-mode palette preserved",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-10-21T21:00:00.000Z"
+    },
+    "/import": {
+      "targetKind": "existing-ui",
+      "projectId": "d6e68cb1-f9c2-46e9-9474-e0e88973f283",
+      "activeDraftId": "ed2f7d8b-1f5f-4fc9-b9bd-63deb8030dab",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/app/globals.css",
+        "src/app/layout.tsx",
+        "src/components/layout/sidebar.tsx",
+        "src/components/layout/i18n-provider.tsx",
+        "src/app/import/page.tsx",
+        "src/components/import/import-wizard.tsx",
+        "src/components/ui/button.tsx",
+        "src/lib/i18n.ts",
+        "src/lib/utils.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "8450aef28e18cbd88e3e3d35a44dd2b080a1b0b31c15a1cf6b3b4030960c1e44",
+        "src/app/globals.css": "af0a016338b3dda182b4ac3546a9b208e2b4f094671a87604e3bf5c1e7ffcbab",
+        "src/app/layout.tsx": "09c57f3565d5354691ca94485f4926d6c1f1878f20ce2c6e01f47e4d2b31ef8b",
+        "src/components/layout/sidebar.tsx": "00f19df1f019a653a5e2e30a71f860ade624e225f1db7126ba9314e1805ace60",
+        "src/components/layout/i18n-provider.tsx": "b35c6faf59b7343c9a2d9953db1ae6e78048e9a922489ac8eee2aa76c619be96",
+        "src/app/import/page.tsx": "e3e2bc3e40079850d4d84a04a0128f4e7e19a6f7d2aa73af20babd6a145bb405",
+        "src/components/import/import-wizard.tsx": "22ff837d3c68d83a6d0f8bfe5e4945d2ce144fa3fe3d852c6ff9191ecb5f5063",
+        "src/components/ui/button.tsx": "9ad96c33e516f557304790a53093d0264ae25467a7dae867c9125d15327d7983",
+        "src/lib/i18n.ts": "717e6e6f6781d14f84f01a093e8052821ffe0b5ad3ace5f461f39ecdca80373e",
+        "src/lib/utils.ts": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d"
+      },
+      "components": [],
+      "drafts": {
+        "ed2f7d8b-1f5f-4fc9-b9bd-63deb8030dab": {
+          "title": "Import Wizard - Step 1",
+          "visualDirection": "Canonical upload step; app dark-mode palette preserved",
+          "currentVersion": 1
+        },
+        "279fd747-3df3-483a-b820-4a33bb4166a2": {
+          "title": "Financial Sidekick - Import Step 2",
+          "visualDirection": "Canonical mapping step; app dark-mode palette preserved",
+          "currentVersion": 1
+        },
+        "0ff6d3e7-aeb7-450c-81bb-02bee8da698b": {
+          "title": "Import Confirmation",
+          "visualDirection": "Canonical review/confirm step; app dark-mode palette preserved",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-10-21T21:00:00.000Z"
+    },
+    "/settings": {
+      "targetKind": "existing-ui",
+      "projectId": "d6e68cb1-f9c2-46e9-9474-e0e88973f283",
+      "baselineDraftId": "bda5b77b-dfab-4518-b33c-b31de0ca658b",
+      "activeDraftId": "bda5b77b-dfab-4518-b33c-b31de0ca658b",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/app/globals.css",
+        "src/app/layout.tsx",
+        "src/components/layout/sidebar.tsx",
+        "src/components/layout/i18n-provider.tsx",
+        "src/app/settings/page.tsx",
+        "src/components/settings/settings-form.tsx",
+        "src/components/settings/language-selector.tsx",
+        "src/components/settings/reset-panel.tsx",
+        "src/components/ui/button.tsx",
+        "src/lib/settings.ts",
+        "src/lib/preferences.ts",
+        "src/lib/money.ts",
+        "src/lib/i18n.ts",
+        "src/lib/utils.ts"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "8450aef28e18cbd88e3e3d35a44dd2b080a1b0b31c15a1cf6b3b4030960c1e44",
+        "src/app/globals.css": "af0a016338b3dda182b4ac3546a9b208e2b4f094671a87604e3bf5c1e7ffcbab",
+        "src/app/layout.tsx": "09c57f3565d5354691ca94485f4926d6c1f1878f20ce2c6e01f47e4d2b31ef8b",
+        "src/components/layout/sidebar.tsx": "00f19df1f019a653a5e2e30a71f860ade624e225f1db7126ba9314e1805ace60",
+        "src/components/layout/i18n-provider.tsx": "b35c6faf59b7343c9a2d9953db1ae6e78048e9a922489ac8eee2aa76c619be96",
+        "src/app/settings/page.tsx": "52a8749e8b976476569dc51e0cc76f89250ab3a12a8dc7b623af2684fec3971b",
+        "src/components/settings/settings-form.tsx": "1892b275ec8d3c567e67989a832c4ffa75f1f6b00cdff3c7b567600804bc3b6c",
+        "src/components/settings/language-selector.tsx": "4165964d5639123505ef80168c943c25226cf9c6e01076d5d38d787b7b5f4166",
+        "src/components/settings/reset-panel.tsx": "984a2395ade46d6f69e6ea9ae039e4519adf59e3fce888fda03a5bf2d8d614ae",
+        "src/components/ui/button.tsx": "9ad96c33e516f557304790a53093d0264ae25467a7dae867c9125d15327d7983",
+        "src/lib/settings.ts": "a16826739961638b288d56eda665d3dfb65ed757dbddad9c7a446bf4e76db63d",
+        "src/lib/preferences.ts": "b48539fdbbefb960348473f458e5d40db694a7c383783bde0b8fae608e0b04a5",
+        "src/lib/money.ts": "a25903ce034c8db49038aedd03427eb0306261e85c2c226e296d50a90327e4ea",
+        "src/lib/i18n.ts": "717e6e6f6781d14f84f01a093e8052821ffe0b5ad3ace5f461f39ecdca80373e",
+        "src/lib/utils.ts": "7c8c3dfc0cdd370d44932828eb067ef771c8fe7996693221d5d4b90af6d54f2d"
+      },
+      "components": [],
+      "drafts": {
+        "bda5b77b-dfab-4518-b33c-b31de0ca658b": {
+          "title": "Financial Sidekick Settings",
+          "visualDirection": "Canonical settings screen; app dark-mode palette preserved",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-10-21T21:00:00.000Z"
+    }
+  }
+}

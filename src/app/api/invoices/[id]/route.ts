@@ -6,20 +6,56 @@ import { checkStartup } from "@/lib/startup-gate";
 
 /**
  * PATCH /api/invoices/:id
- * Body: any of { total_minor, net_minor, vat_minor, gross_minor } — integer minor units within the
- * 100,000,000,000 cap. total_minor is treated as gross. Atomically updates the invoice and, when a
- * linked transaction exists, its amount_minor/net_minor/gross_minor.
- * Response: { ok: true, invoice } | { ok: false, message } (400/404/500/503).
+ * Body: any of { total_minor, net_minor, vat_minor, gross_minor, line_items } — integer minor units
+ * within the 100,000,000,000 cap. total_minor is treated as gross. line_items replaces the stored
+ * JSON array with [{ description, net_minor, vat_minor, gross_minor }]; amount_minor is accepted as
+ * a legacy gross-only alias. Atomically updates the invoice and, when a linked transaction exists,
+ * its amount_minor/net_minor/gross_minor.
+ * Response: { ok: true, total_minor, net_minor, vat_minor, gross_minor } | { ok: false, message }
+ * (400/404/500/503).
  *
  * DELETE /api/invoices/:id
  * Removes the invoice; the linked transaction survives with source_invoice_id = NULL (FK).
  */
+const lineItemSchema = z
+  .object({
+    description: z.string().trim().min(1),
+    net_minor: z.number().int().optional(),
+    vat_minor: z.number().int().optional(),
+    gross_minor: z.number().int().optional(),
+    amount_minor: z.number().int().optional(),
+  })
+  .strict()
+  .refine(
+    (item) =>
+      item.net_minor !== undefined ||
+      item.vat_minor !== undefined ||
+      item.gross_minor !== undefined ||
+      item.amount_minor !== undefined,
+    { message: "Provide net_minor, vat_minor, gross_minor or amount_minor" },
+  );
+
+type LineItemPayload = z.infer<typeof lineItemSchema>;
+
+function normalizeLineItem(item: LineItemPayload) {
+  const grossMinor =
+    item.gross_minor ?? item.amount_minor ?? (item.net_minor ?? 0) + (item.vat_minor ?? 0);
+  const netMinor =
+    item.net_minor ??
+    (item.gross_minor === undefined && item.amount_minor === undefined
+      ? 0
+      : grossMinor - (item.vat_minor ?? 0));
+  const vatMinor = item.vat_minor ?? grossMinor - netMinor;
+  return { description: item.description, netMinor, vatMinor, grossMinor };
+}
+
 const patchSchema = z
   .object({
     total_minor: z.number().int().optional(),
     net_minor: z.number().int().optional(),
     vat_minor: z.number().int().optional(),
     gross_minor: z.number().int().optional(),
+    line_items: z.array(lineItemSchema).max(200).optional(),
   })
   .strict()
   .refine(
@@ -27,8 +63,12 @@ const patchSchema = z
       value.total_minor !== undefined ||
       value.net_minor !== undefined ||
       value.vat_minor !== undefined ||
-      value.gross_minor !== undefined,
-    { message: "Provide at least one of total_minor, net_minor, vat_minor, gross_minor" },
+      value.gross_minor !== undefined ||
+      value.line_items !== undefined,
+    {
+      message:
+        "Provide at least one of total_minor, net_minor, vat_minor, gross_minor, line_items",
+    },
   );
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -55,6 +95,7 @@ export async function PATCH(request: Request, { params }: RouteParams): Promise<
       netMinor: parsed.data.net_minor,
       vatMinor: parsed.data.vat_minor,
       grossMinor: parsed.data.gross_minor,
+      lineItems: parsed.data.line_items?.map(normalizeLineItem),
     });
     if (!result.ok) {
       return Response.json({ ok: false, message: result.message }, { status: result.status });

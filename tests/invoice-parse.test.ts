@@ -4,14 +4,20 @@
 //       a recognized non-default code is stored as extracted. Invoices persist net/VAT/gross (not just a total);
 //       zero-decimal currencies (HUF/JPY) arrive from the model in printed major units and are scaled to hundredths.
 // expected (hand-derived): USD total=5000 & items 3000+2000 → totalMatchesLineItems true, net=5000, vat=0, gross=5000;
-//   total=1000 & item 990 → false; "2024-02-30" and "1899-12-31" → invalid-date throw;
-//   total_minor=100_000_000_001 → cap throw; "XYZ" → "USD"; "eur" → "EUR"; fenced JSON parses to dateInt 20260115;
-//   HUF total 285750 with items 225000+60750 → 28,575,000 minor with items 22,500,000+6,075,000 (×100 once);
-//   net_minor 100000 + vat_minor 27000 + gross 127000 → 100000/27000/127000; net 1000 + vat 270 + gross 1270
-//   (major fields) → 100000/27000/127000; 1000+100 vs gross 1500 → totalsConsistent false.
+//   each line carries net/VAT/gross (legacy amount_minor becomes net=gross, vat=0); total=1000 & item 990 → false;
+//   "2024-02-30" and "1899-12-31" → invalid-date throw; total_minor=100_000_000_001 → cap throw;
+//   "XYZ" → "USD"; "eur" → "EUR"; fenced JSON parses to dateInt 20260115;
+//   HUF total 285750 with items 225000+60750 → 28,575,000 minor with gross 22,500,000+6,075,000 (×100 once);
+//   HUF detailed net 60000/VAT 16200/gross 76200 + 40000/10800/50800 → 6,000,000/1,620,000/7,620,000 and
+//   4,000,000/1,080,000/5,080,000; net_minor 100000 + vat_minor 27000 + gross 127000 → 100000/27000/127000;
+//   net 1000 + vat 270 + gross 1270 (major fields) → 100000/27000/127000; 1000+100 vs gross 1500 → totalsConsistent false.
 import { describe, expect, it } from "vitest";
 
-import { lineItemsMatchTotal, parseInvoiceLlmOutput } from "@/lib/invoice-parse";
+import {
+  lineItemsMatchTotal,
+  parseInvoiceLlmOutput,
+  parseStoredLineItems,
+} from "@/lib/invoice-parse";
 
 function invoiceJson(overrides: Record<string, unknown> = {}): string {
   return JSON.stringify({
@@ -42,8 +48,8 @@ describe("parseInvoiceLlmOutput", () => {
       grossMinor: 5000,
       currencyCode: "USD",
       lineItems: [
-        { description: "Widget", amountMinor: 3000 },
-        { description: "Gadget", amountMinor: 2000 },
+        { description: "Widget", netMinor: 3000, vatMinor: 0, grossMinor: 3000 },
+        { description: "Gadget", netMinor: 2000, vatMinor: 0, grossMinor: 2000 },
       ],
       suggestedCategory: "Office supplies",
       project: "P1",
@@ -112,7 +118,42 @@ describe("parseInvoiceLlmOutput", () => {
     );
 
     expect(parsed.totalMinor).toBe(28_575_000);
-    expect(parsed.lineItems.map((item) => item.amountMinor)).toEqual([22_500_000, 6_075_000]);
+    expect(parsed.lineItems.map((item) => item.grossMinor)).toEqual([22_500_000, 6_075_000]);
+    expect(parsed.lineItems.map((item) => item.netMinor)).toEqual([22_500_000, 6_075_000]);
+    expect(parsed.lineItems.map((item) => item.vatMinor)).toEqual([0, 0]);
+    expect(parsed.totalMatchesLineItems).toBe(true);
+  });
+
+  it("parses per-line net/VAT/gross and scales zero-decimal lines once", () => {
+    const parsed = parseInvoiceLlmOutput(
+      invoiceJson({
+        currency_code: "HUF",
+        total_minor: 127000,
+        net_minor: 100000,
+        vat_minor: 27000,
+        gross_minor: 127000,
+        line_items: [
+          { description: "Item A", net_minor: 60000, vat_minor: 16200, gross_minor: 76200 },
+          { description: "Item B", net_minor: 40000, vat_minor: 10800, gross_minor: 50800 },
+        ],
+      }),
+      "USD",
+    );
+
+    expect(parsed.lineItems).toEqual([
+      {
+        description: "Item A",
+        netMinor: 6_000_000,
+        vatMinor: 1_620_000,
+        grossMinor: 7_620_000,
+      },
+      {
+        description: "Item B",
+        netMinor: 4_000_000,
+        vatMinor: 1_080_000,
+        grossMinor: 5_080_000,
+      },
+    ]);
     expect(parsed.totalMatchesLineItems).toBe(true);
   });
 
@@ -168,6 +209,37 @@ describe("parseInvoiceLlmOutput", () => {
   });
 });
 
+describe("parseStoredLineItems", () => {
+  it("parses legacy and detailed stored rows and drops malformed entries", () => {
+    const stored = JSON.stringify([
+      { description: "Legacy", amount_minor: 5000 },
+      { description: "Detailed", net_minor: 3000, vat_minor: 810, gross_minor: 3810 },
+      { description: "Derived", net_minor: 1000, vat_minor: 270 },
+      { description: "Camel", netMinor: 1000, vatMinor: 270, grossMinor: 1270 },
+      { description: "Camel legacy", amountMinor: 5000 },
+      { description: "Fractional", net_minor: 1.5, vat_minor: 0, gross_minor: 1.5 },
+      { description: 42, amount_minor: 100 },
+      { description: "Missing amount" },
+      null,
+      "nope",
+    ]);
+
+    expect(parseStoredLineItems(stored)).toEqual([
+      { description: "Legacy", netMinor: 5000, vatMinor: 0, grossMinor: 5000 },
+      { description: "Detailed", netMinor: 3000, vatMinor: 810, grossMinor: 3810 },
+      { description: "Derived", netMinor: 1000, vatMinor: 270, grossMinor: 1270 },
+      { description: "Camel", netMinor: 1000, vatMinor: 270, grossMinor: 1270 },
+      { description: "Camel legacy", netMinor: 5000, vatMinor: 0, grossMinor: 5000 },
+    ]);
+  });
+
+  it("returns an empty array for malformed JSON or a non-array payload", () => {
+    expect(parseStoredLineItems("not json")).toEqual([]);
+    expect(parseStoredLineItems('{"description":"Widget","amount_minor":3000}')).toEqual([]);
+    expect(parseStoredLineItems("null")).toEqual([]);
+  });
+});
+
 describe("lineItemsMatchTotal", () => {
   it("returns true when the stored line-item sum equals the stored total", () => {
     const items = JSON.stringify([
@@ -178,5 +250,21 @@ describe("lineItemsMatchTotal", () => {
     expect(lineItemsMatchTotal(items, 5000)).toBe(true);
     expect(lineItemsMatchTotal(items, 1000)).toBe(false);
     expect(lineItemsMatchTotal("not json", 5000)).toBe(false);
+  });
+
+  it("sums the gross amount of detailed line items", () => {
+    const items = JSON.stringify([
+      { description: "A", net_minor: 3000, vat_minor: 810, gross_minor: 3810 },
+      { description: "B", net_minor: 1000, vat_minor: 190, gross_minor: 1190 },
+    ]);
+
+    expect(lineItemsMatchTotal(items, 5000)).toBe(true);
+    expect(lineItemsMatchTotal(items, 4000)).toBe(false);
+
+    const camelCaseItems = JSON.stringify([
+      { description: "A", netMinor: 3000, vatMinor: 810, grossMinor: 3810 },
+      { description: "B", netMinor: 1000, vatMinor: 190, grossMinor: 1190 },
+    ]);
+    expect(lineItemsMatchTotal(camelCaseItems, 5000)).toBe(true);
   });
 });

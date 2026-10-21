@@ -69,20 +69,20 @@ export function InvoiceUploadForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 sm:flex-row sm:items-center dark:border-zinc-800 dark:bg-zinc-900"
+      className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center"
     >
       <input
         ref={inputRef}
         type="file"
         accept=".png,.jpg,.jpeg,.webp,.pdf,image/png,image/jpeg,image/webp,application/pdf"
         onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-        className="w-full text-sm text-zinc-600 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-200 dark:text-zinc-300 dark:file:bg-zinc-800 dark:file:text-zinc-200"
+        className="w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground hover:file:bg-accent"
       />
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={status.kind === "uploading"} className="shrink-0">
           {status.kind === "uploading" ? t("invoices.uploading") : t("invoices.upload")}
         </Button>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">{t("invoices.uploadHint")}</span>
+        <span className="text-xs text-muted-foreground">{t("invoices.uploadHint")}</span>
       </div>
       {status.kind === "success" && (
         <p role="status" className="text-sm font-medium text-emerald-700 sm:ml-2 dark:text-emerald-400">

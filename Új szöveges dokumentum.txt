@@ -1,0 +1,3 @@
+You are a senior dev, 
+Read spec.md and AGENT_CONTRACT.md fully before writing any code. Create PROGRESS.md and Plan.md at repo root per AGENT_CONTRACT.md's format. Start on Section 0 (Foundation) in CHECKLIST.md order. Work file by file: for each file, write it, write its test with a spec-derived mock number and a top comment stating the expected value + the spec rule it comes from, run tsc --noEmit, run the test, then commit that one file (+ test) before moving to the next. Update PROGRESS.md's DONE line and Current focus/Remaining work immediately after each commit — don't batch. If you hit a genuine spec ambiguity, note it in SUBMISSION_NOTES.md and keep moving rather than stalling.
+Don't create files that are in there, you should edit them instead.

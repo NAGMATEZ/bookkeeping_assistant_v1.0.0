@@ -3,8 +3,8 @@ export type FailureResponse = { message: string; status: number };
 const SECRET_ENV_KEYS = [
   "PRIMARY_API_KEY",
   "SECONDARY_API_KEY",
-  "TURSO_AUTH_TOKEN",
   "APP_ENCRYPTION_KEY",
+  "DATABASE_URL",
 ] as const;
 
 function redactSecrets(text: string): string {

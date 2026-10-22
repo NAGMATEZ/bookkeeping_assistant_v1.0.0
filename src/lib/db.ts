@@ -5,6 +5,7 @@ import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 
 import * as schema from "@/db/schema";
+import { resolveDatabaseConfig } from "@/lib/db-config";
 import { ensureLegacyMigrationBaseline } from "@/lib/migrations";
 
 export type Database = LibSQLDatabase<typeof schema>;
@@ -12,17 +13,9 @@ export type Database = LibSQLDatabase<typeof schema>;
 type DatabaseInstance = { client: Client; db: Database };
 
 async function createInstance(): Promise<DatabaseInstance> {
-  const url = process.env.TURSO_DATABASE_URL;
-  const authToken = process.env.TURSO_AUTH_TOKEN;
+  const { url } = resolveDatabaseConfig();
 
-  if (!url) {
-    throw new Error("TURSO_DATABASE_URL is not set");
-  }
-  if (!authToken) {
-    throw new Error("TURSO_AUTH_TOKEN is not set");
-  }
-
-  const client = createClient({ url, authToken });
+  const client = createClient({ url });
   await client.execute("PRAGMA foreign_keys = ON");
 
   const database = drizzle(client, { schema });

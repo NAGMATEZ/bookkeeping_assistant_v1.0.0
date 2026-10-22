@@ -63,7 +63,7 @@ export const settings = sqliteTable('settings', {
 ## Item 0: Database Connection
 
 - Exactly one Turso client + Drizzle instance for the whole app, created in a single module (e.g. `lib/db.ts`) and imported everywhere else — never instantiate `createClient`/`drizzle` inside a route handler, server action, or component.
-- Env vars: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` — read once, in that one module.
+- Env var: a single `DATABASE_URL` (libSQL/Turso URL with the auth token embedded as `?authToken=...`) — resolved once, in that one module (via `lib/db-config.ts`).
 - Guard against Next.js dev hot-reload spawning duplicate clients: cache the instance on `globalThis` in development (standard pattern — same idea as the singleton fix for Prisma-style clients), reused as-is in production since serverless invocations are already isolated.
 - The startup gate's `SELECT 1` check queries through this same shared instance — it does not open its own separate connection.
 

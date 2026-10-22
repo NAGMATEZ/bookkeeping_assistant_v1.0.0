@@ -3,7 +3,8 @@
 // expected: (1) logFailure → console.error receives an object whose stack contains "route.ts:42:9";
 //           (2) provider-style Error("connection refused") → client message "connection refused", status preserved;
 //           (3) ENOENT message with C:\Users\x\secret\file.pdf → "[path]", never the real path;
-//           (4) message containing the stubbed PRIMARY_API_KEY → logged message has "[REDACTED]".
+//           (4) message containing the stubbed PRIMARY_API_KEY → logged message has "[REDACTED]";
+//           (5) message containing the stubbed DATABASE_URL (embedded token) → logged message has "[REDACTED]".
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { failureResponse, logFailure } from "@/lib/diagnostics";
@@ -45,6 +46,20 @@ describe("logFailure", () => {
     expect(consoleError).toHaveBeenCalledWith(
       "[llm dispatch]",
       expect.objectContaining({ message: "401 Unauthorized: key [REDACTED] was rejected" }),
+    );
+  });
+
+  it("redacts a DATABASE_URL that carries an embedded auth token", () => {
+    vi.stubEnv("DATABASE_URL", "libsql://db.turso.io?authToken=super-secret");
+    const error = new Error(
+      "failed to connect to libsql://db.turso.io?authToken=super-secret",
+    );
+
+    logFailure("db boot", error);
+
+    expect(consoleError).toHaveBeenCalledWith(
+      "[db boot]",
+      expect.objectContaining({ message: "failed to connect to [REDACTED]" }),
     );
   });
 });

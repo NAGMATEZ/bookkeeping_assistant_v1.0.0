@@ -8,8 +8,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {
-  process.env.TURSO_DATABASE_URL = ":memory:";
-  process.env.TURSO_AUTH_TOKEN = "test-token";
+  process.env.DATABASE_URL = ":memory:";
 });
 
 import { POST } from "@/app/api/invoices/[id]/confirm/route";

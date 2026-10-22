@@ -15,8 +15,7 @@ let client: Client;
 
 beforeAll(async () => {
   vi.stubEnv("NODE_ENV", "development");
-  vi.stubEnv("TURSO_DATABASE_URL", ":memory:");
-  vi.stubEnv("TURSO_AUTH_TOKEN", "test-token");
+  vi.stubEnv("DATABASE_URL", ":memory:");
   const dbModule = await import("@/lib/db");
   db = dbModule.db;
   client = dbModule.client;

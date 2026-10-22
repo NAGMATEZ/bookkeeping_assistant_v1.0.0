@@ -8,8 +8,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {
-  process.env.TURSO_DATABASE_URL = ":memory:";
-  process.env.TURSO_AUTH_TOKEN = "test-token";
+  process.env.DATABASE_URL = ":memory:";
   process.env.APP_ENCRYPTION_KEY = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 });
 
@@ -39,8 +38,7 @@ beforeAll(async () => {
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  vi.stubEnv("TURSO_DATABASE_URL", ":memory:");
-  vi.stubEnv("TURSO_AUTH_TOKEN", "test-token");
+  vi.stubEnv("DATABASE_URL", ":memory:");
 });
 
 describe("POST /api/settings", () => {
@@ -134,14 +132,14 @@ describe("POST /api/settings", () => {
   });
 
   it("returns the startup gate reason with status 503 when the database env is missing", async () => {
-    vi.stubEnv("TURSO_DATABASE_URL", "");
+    vi.stubEnv("DATABASE_URL", "");
 
     const response = await post({ PRIMARY_MODEL: "whatever" });
 
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
       ok: false,
-      message: "Missing required environment variable: TURSO_DATABASE_URL",
+      message: "Missing required environment variable: DATABASE_URL",
     });
   });
 });

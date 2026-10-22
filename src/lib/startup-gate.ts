@@ -1,13 +1,12 @@
 import { sql } from "drizzle-orm";
 
+import { missingDatabaseEnvVars } from "@/lib/db-config";
 import { failureResponse } from "@/lib/diagnostics";
 
 export type StartupStatus = { ok: true } | { ok: false; reason: string };
 
-const REQUIRED_ENV_VARS = ["TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN"] as const;
-
 export async function checkStartup(): Promise<StartupStatus> {
-  const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]);
+  const missing = missingDatabaseEnvVars();
   if (missing.length > 0) {
     const label = missing.length > 1 ? "variables" : "variable";
     return { ok: false, reason: `Missing required environment ${label}: ${missing.join(", ")}` };

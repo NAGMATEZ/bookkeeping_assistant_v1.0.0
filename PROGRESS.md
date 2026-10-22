@@ -4,8 +4,8 @@ Remaining work: align Dashboard and Settings to their canonical Superdesign draf
 - [DONE] src/db/schema.ts - 3-table Drizzle schema (invoices, transactions, settings) with net/VAT/gross, content_hash, source_image/MIME, and transaction source - notes: SUBMISSION_NOTES.md #7
 - [DONE] drizzle/0001_version_update.sql - upgrade-in-place migration for the version-update columns and legacy data backfill - notes: SUBMISSION_NOTES.md #7
 - [DONE] src/lib/db.ts - shared libSQL/Drizzle singleton with lazy connect (build-safe), PRAGMA foreign_keys = ON, legacy-schema baseline, first-query pending migrations - notes: SUBMISSION_NOTES.md #15, #18
-- [DONE] src/lib/db-config.ts - single DATABASE_URL resolver (auth token embedded as ?authToken=), shared by runtime, startup gate, and drizzle-kit - notes: SUBMISSION_NOTES.md #17
-- [DONE] tests/db-config.test.ts - DATABASE_URL/TURSO precedence, missing-var, and whitespace cases - notes: SUBMISSION_NOTES.md #17
+- [DONE] src/lib/db-config.ts - TURSO_DATABASE_URL + TURSO_AUTH_TOKEN resolver, shared by runtime, startup gate, and drizzle-kit - notes: SUBMISSION_NOTES.md #17
+- [DONE] tests/db-config.test.ts - TURSO URL/token presence, missing-var, and whitespace cases - notes: SUBMISSION_NOTES.md #17
 - [DONE] drizzle.config.ts - drizzle-kit config (dialect: turso), credentials via the shared db-config resolver - notes: SUBMISSION_NOTES.md #17
 - [DONE] src/lib/money.ts - round-once minor-unit helpers, Hungarian/English decimal parser, minor->decimal formatter - notes: SUBMISSION_NOTES.md #1
 - [DONE] src/lib/format.ts - locale-aware money formatting; HUF always hu-HU with symbol after - notes:

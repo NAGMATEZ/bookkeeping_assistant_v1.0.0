@@ -13,9 +13,9 @@ export type Database = LibSQLDatabase<typeof schema>;
 type DatabaseInstance = { client: Client; db: Database };
 
 async function connect(): Promise<DatabaseInstance> {
-  const { url } = resolveDatabaseConfig();
+  const { url, authToken } = resolveDatabaseConfig();
 
-  const client = createClient({ url });
+  const client = createClient({ url, authToken });
   await client.execute("PRAGMA foreign_keys = ON");
 
   const database = drizzle(client, { schema });

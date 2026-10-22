@@ -2,7 +2,7 @@ import { defineConfig } from 'drizzle-kit';
 
 import { resolveDatabaseConfig } from './src/lib/db-config';
 
-const { url } = resolveDatabaseConfig();
+const { url, authToken } = resolveDatabaseConfig();
 
 export default defineConfig({
   schema: './src/db/schema.ts',
@@ -10,6 +10,7 @@ export default defineConfig({
   dialect: 'turso',
   dbCredentials: {
     url,
+    authToken,
   },
   strict: true,
   verbose: true,

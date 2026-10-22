@@ -7,7 +7,8 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import * as XLSX from "xlsx";
 
 vi.hoisted(() => {
-  process.env.DATABASE_URL = ":memory:";
+  process.env.TURSO_DATABASE_URL = ":memory:";
+  process.env.TURSO_AUTH_TOKEN = "test-token";
 });
 
 import { GET } from "@/app/api/export/route";

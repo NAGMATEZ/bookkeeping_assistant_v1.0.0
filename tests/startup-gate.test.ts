@@ -1,7 +1,7 @@
-// spec: startup gate = env var present + real SELECT 1; a missing DATABASE_URL fails before any DB work,
+// spec: startup gate = env vars present + real SELECT 1; a missing env var fails before any DB work,
 //       and a failed SELECT 1 fails without leaking a stack to the caller.
-// expected: missing DATABASE_URL → { ok:false, reason:"Missing required environment variable: DATABASE_URL" }, db.run never called;
-//           db.run rejects "connection refused" → { ok:false, reason:"connection refused" },
+// expected: missing TURSO_DATABASE_URL → { ok:false, reason:"Missing required environment variable: TURSO_DATABASE_URL" }, db.run never called;
+//           both missing → reason lists both; db.run rejects "connection refused" → { ok:false, reason:"connection refused" },
 //           console.error received the full error incl. stack; db.run resolves → { ok:true }.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -15,7 +15,8 @@ let consoleError: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   runMock.mockReset();
-  vi.stubEnv("DATABASE_URL", "libsql://test.turso.io?authToken=test-token");
+  vi.stubEnv("TURSO_DATABASE_URL", "libsql://test.turso.io");
+  vi.stubEnv("TURSO_AUTH_TOKEN", "test-token");
   consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
@@ -26,15 +27,27 @@ afterEach(() => {
 
 describe("checkStartup", () => {
   it("fails on a missing env var without querying the database", async () => {
-    vi.stubEnv("DATABASE_URL", "");
+    vi.stubEnv("TURSO_DATABASE_URL", "");
 
     const result = await checkStartup();
 
     expect(result).toEqual({
       ok: false,
-      reason: "Missing required environment variable: DATABASE_URL",
+      reason: "Missing required environment variable: TURSO_DATABASE_URL",
     });
     expect(runMock).not.toHaveBeenCalled();
+  });
+
+  it("lists every missing env var", async () => {
+    vi.stubEnv("TURSO_DATABASE_URL", "");
+    vi.stubEnv("TURSO_AUTH_TOKEN", "");
+
+    const result = await checkStartup();
+
+    expect(result).toEqual({
+      ok: false,
+      reason: "Missing required environment variables: TURSO_DATABASE_URL, TURSO_AUTH_TOKEN",
+    });
   });
 
   it("fails when the SELECT 1 check throws, logging the full error", async () => {

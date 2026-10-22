@@ -4,7 +4,8 @@ const SECRET_ENV_KEYS = [
   "PRIMARY_API_KEY",
   "SECONDARY_API_KEY",
   "APP_ENCRYPTION_KEY",
-  "DATABASE_URL",
+  "TURSO_DATABASE_URL",
+  "TURSO_AUTH_TOKEN",
 ] as const;
 
 function redactSecrets(text: string): string {

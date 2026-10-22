@@ -10,7 +10,8 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {
-  process.env.DATABASE_URL = ":memory:";
+  process.env.TURSO_DATABASE_URL = ":memory:";
+  process.env.TURSO_AUTH_TOKEN = "test-token";
 });
 
 import { invoices, settings, transactions } from "@/db/schema";

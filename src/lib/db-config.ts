@@ -1,8 +1,10 @@
-export type DatabaseConfig = { url: string };
+export type DatabaseConfig = { url: string; authToken: string };
 
 export type EnvSource = Record<string, string | undefined>;
 
-const DATABASE_URL_KEY = "DATABASE_URL";
+const DATABASE_URL_KEY = "TURSO_DATABASE_URL";
+const AUTH_TOKEN_KEY = "TURSO_AUTH_TOKEN";
+const REQUIRED_KEYS = [DATABASE_URL_KEY, AUTH_TOKEN_KEY] as const;
 
 function read(env: EnvSource, key: string): string | undefined {
   const value = env[key]?.trim();
@@ -10,15 +12,17 @@ function read(env: EnvSource, key: string): string | undefined {
 }
 
 export function missingDatabaseEnvVars(env: EnvSource = process.env): string[] {
-  return read(env, DATABASE_URL_KEY) ? [] : [DATABASE_URL_KEY];
+  return REQUIRED_KEYS.filter((key) => !read(env, key));
 }
 
 export function resolveDatabaseConfig(env: EnvSource = process.env): DatabaseConfig {
   const url = read(env, DATABASE_URL_KEY);
-  if (!url) {
-    throw new Error(
-      "DATABASE_URL is not set: provide a libSQL/Turso URL with the auth token embedded as ?authToken=...",
-    );
+  const authToken = read(env, AUTH_TOKEN_KEY);
+
+  if (!url || !authToken) {
+    const missing = missingDatabaseEnvVars(env);
+    throw new Error(`Missing required environment variable(s): ${missing.join(", ")}`);
   }
-  return { url };
+
+  return { url, authToken };
 }

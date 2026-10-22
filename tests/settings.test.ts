@@ -1,8 +1,10 @@
-// spec: Settings KV fallback is DB Settings → env var of the identical name → (caller) guardrail;
-//       OPENING_BALANCE_<CODE> is stored as integer minor units.
+// spec: Settings KV fallback is DB Settings → env var of the identical name → built-in default (DEFAULT_CURRENCY=HUF)
+//       → (caller) guardrail; OPENING_BALANCE_<CODE> is stored as integer minor units.
 // expected (hand-derived): DB DEFAULT_CURRENCY=USD beats env DEFAULT_CURRENCY=EUR → { value:"USD", source:"db" };
 //   no DB row + env FALLBACK_TEST_KEY="from-env" → { value:"from-env", source:"env" }; neither → null;
+//   unset DEFAULT_CURRENCY → { value:"HUF", source:"default" };
 //   DB OPENING_BALANCE_USD="100000" → 100000; missing key → 0 (SUBMISSION_NOTES #4); "1000.5" → specific throw.
+import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -28,6 +30,16 @@ afterAll(() => {
 });
 
 describe("resolveSetting", () => {
+  it("defaults DEFAULT_CURRENCY to HUF when neither DB nor env sets it", async () => {
+    await db.delete(settings).where(eq(settings.key, "DEFAULT_CURRENCY"));
+    vi.stubEnv("DEFAULT_CURRENCY", "");
+
+    await expect(resolveSetting("DEFAULT_CURRENCY")).resolves.toEqual({
+      value: "HUF",
+      source: "default",
+    });
+  });
+
   it("prefers a DB value over an env var with the same name", async () => {
     await db.insert(settings).values({ key: "DEFAULT_CURRENCY", value: "USD" });
     vi.stubEnv("DEFAULT_CURRENCY", "EUR");

@@ -3,8 +3,11 @@ import { eq } from "drizzle-orm";
 import { settings } from "@/db/schema";
 import { db } from "@/lib/db";
 
-export type SettingSource = "db" | "env";
+export type SettingSource = "db" | "env" | "default";
 export type ResolvedSetting = { value: string; source: SettingSource } | null;
+
+// Fresh installs should be usable immediately instead of greeting the user with a guardrail.
+const SETTING_DEFAULTS: Record<string, string> = { DEFAULT_CURRENCY: "HUF" };
 
 export async function resolveSetting(key: string): Promise<ResolvedSetting> {
   const rows = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
@@ -17,6 +20,11 @@ export async function resolveSetting(key: string): Promise<ResolvedSetting> {
   const fromEnv = process.env[key];
   if (fromEnv !== undefined && fromEnv !== "") {
     return { value: fromEnv, source: "env" };
+  }
+
+  const fallback = SETTING_DEFAULTS[key];
+  if (fallback !== undefined) {
+    return { value: fallback, source: "default" };
   }
 
   return null;

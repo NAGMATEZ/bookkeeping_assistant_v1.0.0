@@ -69,7 +69,7 @@ export const settings = sqliteTable('settings', {
 
 ## Item 1: Config
 
-KV store: `PRIMARY_BASE_URL/MODEL/API_KEY`, `SECONDARY_*`, `DEFAULT_CURRENCY` (ISO 4217, e.g. `USD`), `OPENING_BALANCE_<CODE>` (minor units, keyed to `DEFAULT_CURRENCY` in this build). Fallback: DB Settings → env vars (identical names) → Guardrail. Dispatcher retries once on Secondary if Primary throws network error/429/invalid JSON. Opening Balance field takes a decimal string, converts to minor units only at API boundary. The Settings page's save action must actually write to the Settings table (encrypting `*_API_KEY` values per the Security invariant before storage) — a settings form that renders every field correctly but has a disabled or unwired save button does not satisfy this item.
+KV store: `PRIMARY_BASE_URL/MODEL/API_KEY`, `SECONDARY_*`, `DEFAULT_CURRENCY` (ISO 4217, e.g. `USD`), `OPENING_BALANCE_<CODE>` (minor units, keyed to `DEFAULT_CURRENCY` in this build). Fallback: DB Settings → env vars (identical names) → built-in default (`DEFAULT_CURRENCY` = `HUF`) → Guardrail for still-missing keys. Dispatcher retries once on Secondary if Primary throws network error/429/invalid JSON. Opening Balance field takes a decimal string, converts to minor units only at API boundary. The Settings page's save action must actually write to the Settings table (encrypting `*_API_KEY` values per the Security invariant before storage) — a settings form that renders every field correctly but has a disabled or unwired save button does not satisfy this item.
 
 ## Item 2: Invoice Pipeline
 

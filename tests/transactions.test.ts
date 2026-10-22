@@ -2,8 +2,8 @@
 //   DEFAULT_CURRENCY; description persists; list filters by project/category/date range; delete removes the row.
 // expected (hand-derived): submit 12.34 as expense with DEFAULT_CURRENCY HUF → amount_minor -1234, currency HUF,
 //   source "manual"; as income → +1234; an explicit "-12.34" with isIncome true still stores -1234 (sign wins,
-//   matching the auto-toggle); date "2024-02-30" → 400 invalid date; amount zero → 400; missing DEFAULT_CURRENCY
-//   → 503; date-range filter [2026-01-01, 2026-01-31] excludes a 2025-12-31 row; delete removes only the target row.
+//   matching the auto-toggle); date "2024-02-30" → 400 invalid date; amount zero → 400; unset DEFAULT_CURRENCY
+//   → HUF fallback; date-range filter [2026-01-01, 2026-01-31] excludes a 2025-12-31 row; delete removes only the target row.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
@@ -96,7 +96,7 @@ describe("createManualTransaction", () => {
     expect(result.transaction.amount_minor).toBe(-1234);
   });
 
-  it("rejects invalid dates, zero amounts, and a missing default currency", async () => {
+  it("rejects invalid dates and zero amounts, and falls back to HUF without a configured currency", async () => {
     await setDefaultCurrency("HUF");
 
     await expect(
@@ -126,20 +126,17 @@ describe("createManualTransaction", () => {
     ).resolves.toEqual({ ok: false, status: 400, message: "Amount must not be zero" });
 
     await setDefaultCurrency(null);
-    await expect(
-      createManualTransaction({
-        date: "2026-01-01",
-        amount: "10",
-        isIncome: false,
-        category: "Office",
-        project: "",
-        description: "",
-      }),
-    ).resolves.toEqual({
-      ok: false,
-      status: 503,
-      message: "DEFAULT_CURRENCY is not set. Configure it in Settings before entering transactions.",
+    const fallback = await createManualTransaction({
+      date: "2026-01-01",
+      amount: "10",
+      isIncome: false,
+      category: "Office",
+      project: "",
+      description: "",
     });
+    expect(fallback.ok).toBe(true);
+    if (!fallback.ok) return;
+    expect(fallback.transaction.currency_code).toBe("HUF");
   });
 });
 

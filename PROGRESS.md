@@ -19,7 +19,7 @@ Remaining work: align Dashboard and Settings to their canonical Superdesign draf
 - [DONE] src/components/layout/sidebar.tsx - responsive nav with localized labels, theme toggle, language selector - notes:
 - [DONE] src/app/layout.tsx - cookie-driven lang/dark class, I18nProvider, startup guardrail - notes:
 - [DONE] src/lib/encryption.ts - AES-256-GCM; encrypt() called by settings save route, decrypt() by llm dispatch - notes: SUBMISSION_NOTES.md #3
-- [DONE] src/lib/settings.ts - resolveSetting DB/env fallback + getOpeningBalanceMinor - notes: SUBMISSION_NOTES.md #4
+- [DONE] src/lib/settings.ts - resolveSetting DB/env/built-in fallback (DEFAULT_CURRENCY → HUF) + getOpeningBalanceMinor - notes: SUBMISSION_NOTES.md #4, #19
 - [DONE] src/lib/llm.ts - primary/secondary dispatcher, single retry on network/429/invalid JSON, key decryption - notes:
 - [DONE] src/app/api/settings/route.ts - settings save endpoint (encrypts keys, converts opening balance, primary required, secondary clearable) - notes:
 - [DONE] src/components/settings/settings-form.tsx - localized wired form; API keys never prefilled from server - notes:

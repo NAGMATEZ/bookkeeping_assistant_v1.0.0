@@ -1,7 +1,7 @@
 // spec: import persistence writes mapped rows to transactions with the inferred sign in DEFAULT_CURRENCY;
 //   unparseable-date rows are skipped by the mapper and reported, never thrown.
 // expected (hand-derived): records [expense -5000, income +1000] with DEFAULT_CURRENCY HUF → 2 rows with
-//   amount_minor -5000/+1000 and currency_code HUF; empty category → "Imported"; missing DEFAULT_CURRENCY → 503.
+//   amount_minor -5000/+1000 and currency_code HUF; empty category → "Imported"; unset DEFAULT_CURRENCY → HUF fallback.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -68,14 +68,16 @@ describe("persistImport", () => {
     expect(stored[0].source).toBe("xlsx");
   });
 
-  it("fails with a specific message when DEFAULT_CURRENCY is missing", async () => {
+  it("falls back to HUF when DEFAULT_CURRENCY is not configured", async () => {
     await db.delete(settings).where(eq(settings.key, "DEFAULT_CURRENCY"));
+    const marker = `persist-default-${Math.random()}`;
 
-    await expect(persistImport([record()])).resolves.toEqual({
-      ok: false,
-      status: 503,
-      message: "DEFAULT_CURRENCY is not set. Configure it in Settings before importing transactions.",
+    await expect(persistImport([record({ project: marker })])).resolves.toEqual({
+      ok: true,
+      inserted: 1,
     });
+    const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
+    expect(stored[0].currency_code).toBe("HUF");
 
     await db
       .insert(settings)

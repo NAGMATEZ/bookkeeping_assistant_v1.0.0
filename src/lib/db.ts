@@ -12,7 +12,7 @@ export type Database = LibSQLDatabase<typeof schema>;
 
 type DatabaseInstance = { client: Client; db: Database };
 
-async function createInstance(): Promise<DatabaseInstance> {
+async function connect(): Promise<DatabaseInstance> {
   const { url } = resolveDatabaseConfig();
 
   const client = createClient({ url });
@@ -20,9 +20,9 @@ async function createInstance(): Promise<DatabaseInstance> {
 
   const database = drizzle(client, { schema });
 
-  // Apply pending Drizzle migrations on boot so an existing database upgrades in place.
-  // Tests run their own migrations against isolated in-memory databases.
-  if (process.env.NODE_ENV !== "test" && process.env.NEXT_PHASE !== "phase-production-build") {
+  // Apply pending Drizzle migrations before the first query so an existing database
+  // upgrades in place. Tests migrate their own isolated in-memory databases instead.
+  if (process.env.NODE_ENV !== "test") {
     const migrationsFolder = resolve(process.cwd(), "drizzle");
     await ensureLegacyMigrationBaseline(client, migrationsFolder);
     await migrate(database, { migrationsFolder });
@@ -31,22 +31,52 @@ async function createInstance(): Promise<DatabaseInstance> {
   return { client, db: database };
 }
 
-const globalForDb = globalThis as unknown as {
-  __bookkeepingDbInstance?: Promise<DatabaseInstance>;
-};
+// The connection is opened lazily on the first query. `next build` imports this module
+// while collecting page data, and that must not require database env vars or a network
+// round-trip; every page is force-dynamic and connects at request time.
+function createLazyClient(): Client {
+  let connection: Promise<DatabaseInstance> | undefined;
 
-const instancePromise = globalForDb.__bookkeepingDbInstance ?? createInstance();
+  const getConnection = (): Promise<DatabaseInstance> => {
+    if (!connection) {
+      connection = connect().catch((error: unknown) => {
+        connection = undefined;
+        throw error;
+      });
+    }
+    return connection;
+  };
 
-if (process.env.NODE_ENV === "development") {
-  globalForDb.__bookkeepingDbInstance = instancePromise;
+  return new Proxy({} as Client, {
+    get(_target, property: string | symbol) {
+      if (property === "close") {
+        return () => {
+          void getConnection().then(({ client }) => client.close());
+        };
+      }
+      return (...args: unknown[]) =>
+        getConnection().then(({ client }) => {
+          const member: unknown = Reflect.get(client, property);
+          return typeof member === "function" ? member.apply(client, args) : member;
+        });
+    },
+  });
 }
 
-const instance = await instancePromise.catch((error: unknown) => {
-  if (globalForDb.__bookkeepingDbInstance === instancePromise) {
-    delete globalForDb.__bookkeepingDbInstance;
-  }
-  throw error;
-});
+function createDatabase(): DatabaseInstance {
+  const client = createLazyClient();
+  return { client, db: drizzle(client, { schema }) };
+}
+
+const globalForDb = globalThis as unknown as {
+  __bookkeepingDb?: DatabaseInstance;
+};
+
+const instance = globalForDb.__bookkeepingDb ?? createDatabase();
+
+if (process.env.NODE_ENV === "development") {
+  globalForDb.__bookkeepingDb = instance;
+}
 
 export const client = instance.client;
 export const db = instance.db;

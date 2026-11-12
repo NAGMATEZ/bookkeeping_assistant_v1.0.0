@@ -7,6 +7,10 @@
 //   "kiadás"/"terhelés"/"kifizetés"/"költség"/"tartozik"/"nem" → expense; unknown token falls back to sign;
 //   8 rows "-10.00" with overrides {3:true, 7:true} → exactly rows 3 and 7 positive (row 7 beyond the preview),
 //   all other rows -1000; invalid date row is skipped and reported, not mapped.
+// import date formats: year-first "2026.01.15", "2026/01/16", "2026-1-17", "20260118",
+//   "2026. 01. 19.", and "2024-02-29T00:00:00Z" normalize to ISO/dateInt; "2026-02-29", "2026.02.31",
+//   "2026/04/31", "1900.02.29", "2100-02-29", "1899.12.31", "2101.01.01", "2026.13.01", "2026.00.10"
+//   are all skipped; "2000.02.29" is accepted (divisible by 400).
 import { describe, expect, it } from "vitest";
 
 import { mapImportRows, resolveRowIsIncome, type ColumnMapping } from "@/lib/import-map";
@@ -93,5 +97,54 @@ describe("mapImportRows", () => {
       { rowIndex: 1, reason: 'Invalid or missing date "2024-02-30"' },
       { rowIndex: 2, reason: 'Invalid or missing date "not-a-date"' },
     ]);
+  });
+
+  it("accepts and normalizes common year-first date formats", () => {
+    const result = mapImportRows(
+      [
+        row("2026.01.15", "10.00"),
+        row("2026/01/16", "10.00"),
+        row("2026-1-17", "10.00"),
+        row("20260118", "10.00"),
+        row("2026. 01. 19.", "10.00"),
+        row("2024-02-29T00:00:00Z", "10.00"),
+      ],
+      MAPPING,
+    );
+
+    expect(result.skipped).toEqual([]);
+    expect(result.records.map((record) => record.date)).toEqual([
+      "2026-01-15",
+      "2026-01-16",
+      "2026-01-17",
+      "2026-01-18",
+      "2026-01-19",
+      "2024-02-29",
+    ]);
+    expect(result.records.map((record) => record.dateInt)).toEqual([
+      20260115, 20260116, 20260117, 20260118, 20260119, 20240229,
+    ]);
+  });
+
+  it("rejects impossible days, out-of-range years/months, and non-leap February 29", () => {
+    const result = mapImportRows(
+      [
+        row("2026-02-29", "10.00"),
+        row("2026.02.31", "10.00"),
+        row("2026/04/31", "10.00"),
+        row("1900.02.29", "10.00"),
+        row("2100-02-29", "10.00"),
+        row("1899.12.31", "10.00"),
+        row("2101.01.01", "10.00"),
+        row("2026.13.01", "10.00"),
+        row("2026.00.10", "10.00"),
+        row("2000.02.29", "10.00"),
+      ],
+      MAPPING,
+    );
+
+    expect(result.records.map((record) => record.date)).toEqual(["2000-02-29"]);
+    expect(result.records[0].dateInt).toBe(20000229);
+    expect(result.skipped.map((entry) => entry.rowIndex)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
   });
 });

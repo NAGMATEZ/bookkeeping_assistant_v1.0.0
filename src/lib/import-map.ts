@@ -1,4 +1,4 @@
-import { isAllowedCalendarDate, toDateInt } from "@/lib/dates";
+import { fromDateInt, parseImportDate } from "@/lib/dates";
 import { MAX_AMOUNT_MINOR } from "@/lib/invoice-parse";
 import { parseDecimalToMinorUnits } from "@/lib/money";
 
@@ -108,10 +108,12 @@ export function mapImportRows(
 
   rows.forEach((row, rowIndex) => {
     const rawDate = cell(row, mapping.date);
-    if (!isAllowedCalendarDate(rawDate)) {
+    const parsedDate = parseImportDate(rawDate);
+    if (!parsedDate) {
       skipped.push({ rowIndex, reason: `Invalid or missing date "${rawDate}"` });
       return;
     }
+    const dateInt = parsedDate.year * 10000 + parsedDate.month * 100 + parsedDate.day;
 
     let parsedAmount: number;
     try {
@@ -141,8 +143,8 @@ export function mapImportRows(
 
     records.push({
       rowIndex,
-      date: rawDate,
-      dateInt: toDateInt(rawDate),
+      date: fromDateInt(dateInt),
+      dateInt,
       description: cell(row, mapping.description),
       amountMinor: isIncome ? Math.abs(parsedAmount) : -Math.abs(parsedAmount),
       category: cell(row, mapping.category),

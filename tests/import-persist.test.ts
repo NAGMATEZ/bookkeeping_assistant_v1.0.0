@@ -2,6 +2,8 @@
 //   unparseable-date rows are skipped by the mapper and reported, never thrown.
 // expected (hand-derived): records [expense -5000, income +1000] with DEFAULT_CURRENCY HUF → 2 rows with
 //   amount_minor -5000/+1000 and currency_code HUF; empty category → "Imported"; unset DEFAULT_CURRENCY → HUF fallback.
+// skipDuplicates: re-persisting the same record inserts 0 and reports 1 duplicate; 1201 unique rows insert 1201
+//   (chunked inserts stay below the SQLite parameter limit).
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -46,7 +48,7 @@ describe("persistImport", () => {
       record({ rowIndex: 1, project: marker, amountMinor: 1000, category: "" }),
     ]);
 
-    expect(result).toEqual({ ok: true, inserted: 2 });
+    expect(result).toEqual({ ok: true, inserted: 2, skippedDuplicates: 0 });
     const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
     expect(stored).toHaveLength(2);
     expect(stored.map((row) => row.amount_minor).sort((a, b) => a - b)).toEqual([-5000, 1000]);
@@ -75,6 +77,7 @@ describe("persistImport", () => {
     await expect(persistImport([record({ project: marker })])).resolves.toEqual({
       ok: true,
       inserted: 1,
+      skippedDuplicates: 0,
     });
     const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
     expect(stored[0].currency_code).toBe("HUF");
@@ -83,5 +86,48 @@ describe("persistImport", () => {
       .insert(settings)
       .values({ key: "DEFAULT_CURRENCY", value: "HUF" })
       .onConflictDoUpdate({ target: settings.key, set: { value: "HUF" } });
+  });
+
+  it("skips records already imported when skipDuplicates is enabled", async () => {
+    await db
+      .insert(settings)
+      .values({ key: "DEFAULT_CURRENCY", value: "HUF" })
+      .onConflictDoUpdate({ target: settings.key, set: { value: "HUF" } });
+    const marker = `persist-dedupe-${Math.random()}`;
+    const row = record({ project: marker });
+
+    await expect(persistImport([row], "csv", { skipDuplicates: true })).resolves.toEqual({
+      ok: true,
+      inserted: 1,
+      skippedDuplicates: 0,
+    });
+    await expect(persistImport([row], "csv", { skipDuplicates: true })).resolves.toEqual({
+      ok: true,
+      inserted: 0,
+      skippedDuplicates: 1,
+    });
+
+    const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
+    expect(stored).toHaveLength(1);
+  });
+
+  it("inserts large batches in chunks instead of one oversized statement", async () => {
+    await db
+      .insert(settings)
+      .values({ key: "DEFAULT_CURRENCY", value: "HUF" })
+      .onConflictDoUpdate({ target: settings.key, set: { value: "HUF" } });
+    const marker = `persist-chunk-${Math.random()}`;
+    const rows = Array.from({ length: 1201 }, (_, index) =>
+      record({ rowIndex: index, project: marker, description: `row ${index}` }),
+    );
+
+    await expect(persistImport(rows)).resolves.toEqual({
+      ok: true,
+      inserted: 1201,
+      skippedDuplicates: 0,
+    });
+
+    const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
+    expect(stored).toHaveLength(1201);
   });
 });

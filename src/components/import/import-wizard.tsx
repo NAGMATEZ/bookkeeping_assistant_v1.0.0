@@ -21,6 +21,7 @@ type Preview = {
 
 type ImportResult = {
   inserted: number;
+  skippedDuplicates: number;
   skipped: Array<{ rowIndex: number; reason: string }>;
 };
 
@@ -255,6 +256,7 @@ export function ImportWizard() {
       const body = (await response.json().catch(() => null)) as {
         ok?: boolean;
         inserted?: number;
+        skippedDuplicates?: number;
         skipped?: Array<{ rowIndex: number; reason: string }>;
         message?: string;
       } | null;
@@ -267,7 +269,11 @@ export function ImportWizard() {
         return;
       }
 
-      setResult({ inserted: body.inserted ?? 0, skipped: body.skipped ?? [] });
+      setResult({
+        inserted: body.inserted ?? 0,
+        skippedDuplicates: body.skippedDuplicates ?? 0,
+        skipped: body.skipped ?? [],
+      });
       router.refresh();
     } catch (error) {
       setFeedback({
@@ -512,9 +518,8 @@ export function ImportWizard() {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Stat label={t("import.totalRows")} value={preview.totalRows} />
-              <Stat label={t("import.previewRows")} value={preview.rows.length} />
               <Stat label={t("import.mappedFields")} value={mappedFieldLabels.length} />
             </div>
 
@@ -527,6 +532,11 @@ export function ImportWizard() {
                 <p className="text-sm font-medium text-positive">
                   {t("import.imported", { count: result.inserted })}
                 </p>
+                {result.skippedDuplicates > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {t("import.duplicatesSkipped", { count: result.skippedDuplicates })}
+                  </p>
+                )}
                 {result.skipped.length > 0 && (
                   <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
                     <p className="font-medium">

@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 
 import { useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
+import { todayIsoDate } from "@/lib/dates";
 
 type Status =
   | { kind: "idle" }
@@ -85,7 +86,7 @@ export function ManualEntryForm() {
           type="date"
           required
           min="1900-01-01"
-          max="2100-12-31"
+          max={todayIsoDate()}
           value={date}
           onChange={(event) => setDate(event.target.value)}
           className={INPUT_CLASS}

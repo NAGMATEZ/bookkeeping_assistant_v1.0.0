@@ -5,16 +5,21 @@
 //   monthKeyOf(20260115) → "2026-01"; fromDateInt(20260115) → "2026-01-15".
 // Gregorian leap rule: 2000-02-29 valid (divisible by 400), 1900-02-29 / 2100-02-29 invalid
 //   (centuries not divisible by 400), 2024-02-29 valid, 2023-02-29 invalid.
+// Today in Europe/Budapest: 2026-11-12T23:30Z is already 2026-11-13 local, so todayDateInt → 20261113;
+//   isFutureDateInt is true only when dateInt > todayDateInt (today itself is allowed).
 import { describe, expect, it } from "vitest";
 
 import {
   daysInMonth,
   fromDateInt,
   isAllowedCalendarDate,
+  isFutureDateInt,
   isLeapYear,
   monthKeyOf,
   parseCalendarDate,
   toDateInt,
+  todayDateInt,
+  todayIsoDate,
 } from "@/lib/dates";
 
 describe("isAllowedCalendarDate / parseCalendarDate", () => {
@@ -74,5 +79,20 @@ describe("integer conversions", () => {
   it("derives the month key used for dashboard buckets", () => {
     expect(monthKeyOf(20260115)).toBe("2026-01");
     expect(monthKeyOf(20241231)).toBe("2024-12");
+  });
+
+  it("resolves today in the app timezone so after-midnight local dates are not future", () => {
+    expect(todayIsoDate(new Date("2026-11-12T12:00:00Z"))).toBe("2026-11-12");
+    expect(todayDateInt(new Date("2026-11-12T12:00:00Z"))).toBe(20261112);
+    expect(todayIsoDate(new Date("2026-11-12T22:59:00Z"))).toBe("2026-11-12");
+    expect(todayIsoDate(new Date("2026-11-12T23:30:00Z"))).toBe("2026-11-13");
+    expect(todayDateInt(new Date("2026-11-12T23:30:00Z"))).toBe(20261113);
+  });
+
+  it("flags only dates strictly after today as future", () => {
+    const now = new Date("2026-11-12T12:00:00Z");
+    expect(isFutureDateInt(20261113, now)).toBe(true);
+    expect(isFutureDateInt(20261112, now)).toBe(false);
+    expect(isFutureDateInt(20261111, now)).toBe(false);
   });
 });

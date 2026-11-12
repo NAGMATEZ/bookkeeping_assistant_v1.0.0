@@ -91,3 +91,26 @@ export function fromDateInt(value: number): string {
 export function monthKeyOf(dateInt: number): string {
   return `${Math.trunc(dateInt / 10000)}-${String(Math.trunc((dateInt % 10000) / 100)).padStart(2, "0")}`;
 }
+
+// The app is HU-default, so "today" is resolved in the same timezone the users live in; a UTC-only
+// comparison would reject the current local date for a couple of hours after midnight.
+const APP_TIME_ZONE = "Europe/Budapest";
+const TODAY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: APP_TIME_ZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+export function todayIsoDate(now: Date = new Date()): string {
+  return TODAY_FORMATTER.format(now);
+}
+
+export function todayDateInt(now: Date = new Date()): number {
+  const [year, month, day] = todayIsoDate(now).split("-").map(Number);
+  return year * 10000 + month * 100 + day;
+}
+
+export function isFutureDateInt(dateInt: number, now: Date = new Date()): boolean {
+  return dateInt > todayDateInt(now);
+}

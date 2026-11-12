@@ -81,7 +81,15 @@ export function ManualEntryForm() {
     <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
         {t("manual.date")}
-        <input type="date" required value={date} onChange={(event) => setDate(event.target.value)} className={INPUT_CLASS} />
+        <input
+          type="date"
+          required
+          min="1900-01-01"
+          max="2100-12-31"
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+          className={INPUT_CLASS}
+        />
       </label>
       <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
         {t("manual.amount")}

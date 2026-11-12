@@ -6,6 +6,28 @@ export type TabularData = {
   rows: string[][];
 };
 
+export const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+
+export type ImportFileCheck = { ok: true } | { ok: false; message: string };
+
+export function checkImportFile(file: { name: string; size: number }): ImportFileCheck {
+  const lower = file.name.toLowerCase();
+  if (!lower.endsWith(".csv") && !lower.endsWith(".xlsx") && !lower.endsWith(".xls")) {
+    return {
+      ok: false,
+      message: `Unsupported import file "${file.name}". Upload a .csv, .xlsx, or .xls file.`,
+    };
+  }
+  if (file.size > MAX_IMPORT_BYTES) {
+    const megabytes = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      ok: false,
+      message: `File is too large (${megabytes} MB). The import limit is 10 MB.`,
+    };
+  }
+  return { ok: true };
+}
+
 function decodeText(bytes: Uint8Array): string {
   const utf8 = new TextDecoder("utf-8").decode(bytes);
   if (!utf8.includes("\uFFFD")) {
@@ -16,7 +38,12 @@ function decodeText(bytes: Uint8Array): string {
 
 function cellToString(cell: unknown): string {
   if (cell instanceof Date) {
-    return cell.toISOString().slice(0, 10);
+    // XLSX builds date cells from the sheet's calendar components in local time, so read them back the same
+    // way; toISOString() would shift the calendar day for users east/west of UTC.
+    const year = String(cell.getFullYear()).padStart(4, "0");
+    const month = String(cell.getMonth() + 1).padStart(2, "0");
+    const day = String(cell.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }
   return String(cell ?? "");
 }
@@ -24,8 +51,10 @@ function cellToString(cell: unknown): string {
 export function parseCsv(bytes: Uint8Array): TabularData {
   const text = decodeText(bytes);
   const result = Papa.parse<string[]>(text, { skipEmptyLines: true });
-  if (result.errors.length > 0) {
-    throw new Error(`CSV parse error: ${result.errors[0].message}`);
+  // A single-column file is valid but has no detectable delimiter; that diagnosis is informational.
+  const fatal = result.errors.find((error) => error.code !== "UndetectableDelimiter");
+  if (fatal) {
+    throw new Error(`CSV parse error: ${fatal.message}`);
   }
 
   const [headers = [], ...rows] = result.data;

@@ -2,7 +2,8 @@
 //   DEFAULT_CURRENCY; description persists; list filters by project/category/date range; delete removes the row.
 // expected (hand-derived): submit 12.34 as expense with DEFAULT_CURRENCY HUF → amount_minor -1234, currency HUF,
 //   source "manual"; as income → +1234; an explicit "-12.34" with isIncome true still stores -1234 (sign wins,
-//   matching the auto-toggle); date "2024-02-30" → 400 invalid date; amount zero → 400; unset DEFAULT_CURRENCY
+//   matching the auto-toggle); date "2024-02-30" → 400 invalid date; a date after today (2100-01-01) → 400
+//   "Date cannot be in the future"; amount zero → 400; unset DEFAULT_CURRENCY
 //   → HUF fallback; date-range filter [2026-01-01, 2026-01-31] excludes a 2025-12-31 row; delete removes only the target row.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
@@ -94,6 +95,21 @@ describe("createManualTransaction", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.transaction.amount_minor).toBe(-1234);
+  });
+
+  it("rejects a date after today", async () => {
+    await setDefaultCurrency("HUF");
+
+    await expect(
+      createManualTransaction({
+        date: "2100-01-01",
+        amount: "10",
+        isIncome: false,
+        category: "Office",
+        project: "",
+        description: "",
+      }),
+    ).resolves.toEqual({ ok: false, status: 400, message: "Date cannot be in the future" });
   });
 
   it("rejects invalid dates and zero amounts, and falls back to HUF without a configured currency", async () => {

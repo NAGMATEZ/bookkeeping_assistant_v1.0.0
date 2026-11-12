@@ -2,7 +2,7 @@ import { and, desc, eq, gte, like, lte } from "drizzle-orm";
 
 import { transactions } from "@/db/schema";
 import { db } from "@/lib/db";
-import { toDateInt } from "@/lib/dates";
+import { isFutureDateInt, toDateInt } from "@/lib/dates";
 import { MAX_AMOUNT_MINOR } from "@/lib/invoice-parse";
 import { parseDecimalToMinorUnits } from "@/lib/money";
 import { resolveSetting } from "@/lib/settings";
@@ -55,6 +55,10 @@ export async function createManualTransaction(
       status: 400,
       message: error instanceof Error ? error.message : "Invalid date",
     };
+  }
+
+  if (isFutureDateInt(dateInt)) {
+    return { ok: false, status: 400, message: "Date cannot be in the future" };
   }
 
   let magnitude: number;

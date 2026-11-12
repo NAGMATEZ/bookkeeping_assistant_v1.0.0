@@ -1,5 +1,5 @@
 import { failureResponse } from "@/lib/diagnostics";
-import { parseImportFile } from "@/lib/import-parse";
+import { checkImportFile, parseImportFile } from "@/lib/import-parse";
 import { checkStartup } from "@/lib/startup-gate";
 
 /**
@@ -19,6 +19,10 @@ export async function POST(request: Request): Promise<Response> {
     const file = form?.get("file");
     if (!(file instanceof File)) {
       return Response.json({ ok: false, message: "No file was uploaded." }, { status: 400 });
+    }
+    const fileCheck = checkImportFile(file);
+    if (!fileCheck.ok) {
+      return Response.json({ ok: false, message: fileCheck.message }, { status: 400 });
     }
 
     const bytes = new Uint8Array(await file.arrayBuffer());

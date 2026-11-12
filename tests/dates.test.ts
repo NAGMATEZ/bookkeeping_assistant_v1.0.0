@@ -3,11 +3,15 @@
 // expected (hand-derived): "2024-02-30" → invalid (Feb 30 does not exist); "1899-12-31" → out of range;
 //   "2101-01-01" → out of range; "2024-02-29" → valid (leap year); "2026-01-15" → toDateInt 20260115;
 //   monthKeyOf(20260115) → "2026-01"; fromDateInt(20260115) → "2026-01-15".
+// Gregorian leap rule: 2000-02-29 valid (divisible by 400), 1900-02-29 / 2100-02-29 invalid
+//   (centuries not divisible by 400), 2024-02-29 valid, 2023-02-29 invalid.
 import { describe, expect, it } from "vitest";
 
 import {
+  daysInMonth,
   fromDateInt,
   isAllowedCalendarDate,
+  isLeapYear,
   monthKeyOf,
   parseCalendarDate,
   toDateInt,
@@ -29,6 +33,30 @@ describe("isAllowedCalendarDate / parseCalendarDate", () => {
     expect(isAllowedCalendarDate("1900-01-01")).toBe(true);
     expect(isAllowedCalendarDate("2100-12-31")).toBe(true);
     expect(parseCalendarDate("2026-01-15")).toEqual({ year: 2026, month: 1, day: 15 });
+  });
+
+  it("applies the Gregorian century rule to February 29", () => {
+    expect(isLeapYear(2000)).toBe(true);
+    expect(isLeapYear(2024)).toBe(true);
+    expect(isLeapYear(1900)).toBe(false);
+    expect(isLeapYear(2100)).toBe(false);
+    expect(isLeapYear(2023)).toBe(false);
+    expect(isAllowedCalendarDate("2000-02-29")).toBe(true);
+    expect(isAllowedCalendarDate("2024-02-29")).toBe(true);
+    expect(isAllowedCalendarDate("1900-02-29")).toBe(false);
+    expect(isAllowedCalendarDate("2100-02-29")).toBe(false);
+    expect(isAllowedCalendarDate("2023-02-29")).toBe(false);
+  });
+
+  it("reports the number of days in each month, including leap February", () => {
+    expect(daysInMonth(2026, 1)).toBe(31);
+    expect(daysInMonth(2026, 2)).toBe(28);
+    expect(daysInMonth(2024, 2)).toBe(29);
+    expect(daysInMonth(1900, 2)).toBe(28);
+    expect(daysInMonth(2000, 2)).toBe(29);
+    expect(daysInMonth(2100, 2)).toBe(28);
+    expect(daysInMonth(2026, 4)).toBe(30);
+    expect(daysInMonth(2026, 13)).toBe(0);
   });
 });
 

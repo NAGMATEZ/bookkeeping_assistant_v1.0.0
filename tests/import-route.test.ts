@@ -2,6 +2,7 @@
 //   DEFAULT_CURRENCY, and reports unparseable rows instead of throwing.
 // expected (hand-derived): CSV rows "-5,00" (expense) and "100,00" + direction "income"; override {"0":true}
 //   → inserted 2, amounts +500 and +10000, currency HUF; the "2024-02-30" row is skipped and reported at rowIndex 2.
+// Re-importing the same file → inserted 0, skippedDuplicates 2, and the table still has exactly 2 rows.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -15,12 +16,12 @@ import { POST } from "@/app/api/import/route";
 import { settings, transactions } from "@/db/schema";
 import { db } from "@/lib/db";
 
-function importRequest(): Request {
+function importRequest(marker = "ImportRoute"): Request {
   const csv = [
     "date;description;amount;direction;category;project",
-    "2026-01-15;Coffee;-5,00;;Office;ImportRoute",
-    "2026-01-16;Salary;100,00;income;Work;ImportRoute",
-    "2024-02-30;Bad date;10,00;;Office;ImportRoute",
+    `2026-01-15;Coffee;-5,00;;Office;${marker}`,
+    `2026-01-16;Salary;100,00;income;Work;${marker}`,
+    `2024-02-30;Bad date;10,00;;Office;${marker}`,
     "",
   ].join("\n");
   const form = new FormData();
@@ -52,5 +53,26 @@ describe("POST /api/import", () => {
     expect(stored.map((row) => row.amount_minor).sort((a, b) => a - b)).toEqual([500, 10000]);
     expect(stored.every((row) => row.currency_code === "HUF")).toBe(true);
     expect(stored.find((row) => row.amount_minor === 500)?.description).toBe("Coffee");
+  });
+
+  it("does not duplicate rows when the same file is imported again", async () => {
+    const marker = `ImportDedupe-${Math.random()}`;
+
+    const first = (await (await POST(importRequest(marker))).json()) as {
+      inserted: number;
+      skippedDuplicates: number;
+    };
+    expect(first.inserted).toBe(2);
+    expect(first.skippedDuplicates).toBe(0);
+
+    const second = (await (await POST(importRequest(marker))).json()) as {
+      inserted: number;
+      skippedDuplicates: number;
+    };
+    expect(second.inserted).toBe(0);
+    expect(second.skippedDuplicates).toBe(2);
+
+    const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
+    expect(stored).toHaveLength(2);
   });
 });

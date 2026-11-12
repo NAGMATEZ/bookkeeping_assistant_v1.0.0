@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { failureResponse } from "@/lib/diagnostics";
 import { mapImportRows } from "@/lib/import-map";
-import { parseImportFile } from "@/lib/import-parse";
+import { checkImportFile, parseImportFile } from "@/lib/import-parse";
 import { persistImport } from "@/lib/import-persist";
 import { checkStartup } from "@/lib/startup-gate";
 
@@ -11,8 +11,9 @@ import { checkStartup } from "@/lib/startup-gate";
  * multipart/form-data: `file` (.csv/.xlsx/.xls), `mapping` (JSON column indices), `overrides` (JSON
  * {rowIndex: isIncome} captured on the mapping screen — applied to every row, not just the previewed 5).
  * Maps rows with the direction precedence (sign < direction column < override) and persists them all in
- * DEFAULT_CURRENCY; unparseable rows are reported in `skipped`, never thrown.
- * Response: { ok: true, inserted, skipped } | { ok: false, message } (400/500/503).
+ * DEFAULT_CURRENCY; unparseable rows are reported in `skipped`, never thrown, and rows identical to an
+ * already-imported transaction are counted in `skippedDuplicates` instead of being inserted again.
+ * Response: { ok: true, inserted, skippedDuplicates, skipped } | { ok: false, message } (400/500/503).
  */
 const mappingSchema = z
   .object({
@@ -38,6 +39,10 @@ export async function POST(request: Request): Promise<Response> {
     const file = form?.get("file");
     if (!(file instanceof File)) {
       return Response.json({ ok: false, message: "No file was uploaded." }, { status: 400 });
+    }
+    const fileCheck = checkImportFile(file);
+    if (!fileCheck.ok) {
+      return Response.json({ ok: false, message: fileCheck.message }, { status: 400 });
     }
 
     let mappingJson: unknown;
@@ -74,12 +79,17 @@ export async function POST(request: Request): Promise<Response> {
     const { records, skipped } = mapImportRows(parsed.rows, mapping.data, overrides);
 
     const source = /\.xlsx?$/i.test(file.name) ? "xlsx" : "csv";
-    const persisted = await persistImport(records, source);
+    const persisted = await persistImport(records, source, { skipDuplicates: true });
     if (!persisted.ok) {
       return Response.json({ ok: false, message: persisted.message }, { status: persisted.status });
     }
 
-    return Response.json({ ok: true, inserted: persisted.inserted, skipped });
+    return Response.json({
+      ok: true,
+      inserted: persisted.inserted,
+      skippedDuplicates: persisted.skippedDuplicates,
+      skipped,
+    });
   } catch (error) {
     const failure = failureResponse("import", error, "Importing transactions failed");
     return Response.json({ ok: false, message: failure.message }, { status: failure.status });

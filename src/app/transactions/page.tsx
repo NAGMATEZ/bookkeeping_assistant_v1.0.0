@@ -83,11 +83,25 @@ export default async function TransactionsPage({
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "transactions.from")}
-          <input type="date" name="from" defaultValue={from ?? ""} className={INPUT_CLASS} />
+          <input
+            type="date"
+            name="from"
+            min="1900-01-01"
+            max="2100-12-31"
+            defaultValue={from ?? ""}
+            className={INPUT_CLASS}
+          />
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-muted-foreground">
           {translate(locale, "transactions.to")}
-          <input type="date" name="to" defaultValue={to ?? ""} className={INPUT_CLASS} />
+          <input
+            type="date"
+            name="to"
+            min="1900-01-01"
+            max="2100-12-31"
+            defaultValue={to ?? ""}
+            className={INPUT_CLASS}
+          />
         </label>
         <button
           type="submit"

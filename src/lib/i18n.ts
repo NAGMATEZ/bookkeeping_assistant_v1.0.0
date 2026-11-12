@@ -152,6 +152,7 @@ const hu = {
   "import.importAll": "Mind a {count} sor importálása",
   "import.importing": "Importálás…",
   "import.imported": "{count} sor importálva.",
+  "import.duplicatesSkipped": "{count} ismétlődő sor kihagyva.",
   "import.importedWithSkips":
     "{count} sor importálva. {skipped} kihagyva: {details}",
   "import.rowDetail": "{row}. sor ({reason})",
@@ -460,6 +461,7 @@ const en: Record<MessageKey, string> = {
   "import.importAll": "Import All {count} Rows",
   "import.importing": "Importing…",
   "import.imported": "Imported {count} rows.",
+  "import.duplicatesSkipped": "Skipped {count} duplicate rows.",
   "import.importedWithSkips": "Imported {count} rows. Skipped {skipped}: {details}",
   "import.rowDetail": "row {row} ({reason})",
   "import.columnFallback": "Column {index}",

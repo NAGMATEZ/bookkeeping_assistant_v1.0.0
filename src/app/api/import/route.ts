@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { todayDateInt } from "@/lib/dates";
 import { failureResponse } from "@/lib/diagnostics";
 import { mapImportRows } from "@/lib/import-map";
 import { checkImportFile, parseImportFile } from "@/lib/import-parse";
@@ -11,8 +12,9 @@ import { checkStartup } from "@/lib/startup-gate";
  * multipart/form-data: `file` (.csv/.xlsx/.xls), `mapping` (JSON column indices), `overrides` (JSON
  * {rowIndex: isIncome} captured on the mapping screen — applied to every row, not just the previewed 5).
  * Maps rows with the direction precedence (sign < direction column < override) and persists them all in
- * DEFAULT_CURRENCY; unparseable rows are reported in `skipped`, never thrown, and rows identical to an
- * already-imported transaction are counted in `skippedDuplicates` instead of being inserted again.
+ * DEFAULT_CURRENCY; unparseable rows and dates after today are reported in `skipped`, never thrown, and
+ * rows identical to an already-imported transaction are counted in `skippedDuplicates` instead of being
+ * inserted again.
  * Response: { ok: true, inserted, skippedDuplicates, skipped } | { ok: false, message } (400/500/503).
  */
 const mappingSchema = z
@@ -78,8 +80,18 @@ export async function POST(request: Request): Promise<Response> {
     const parsed = parseImportFile(file.name, bytes);
     const { records, skipped } = mapImportRows(parsed.rows, mapping.data, overrides);
 
+    const today = todayDateInt();
+    const importable = records.filter((record) => record.dateInt <= today);
+    const futureSkipped = records
+      .filter((record) => record.dateInt > today)
+      .map((record) => ({
+        rowIndex: record.rowIndex,
+        reason: `Date "${record.date}" is after today`,
+      }));
+    const allSkipped = [...skipped, ...futureSkipped].sort((a, b) => a.rowIndex - b.rowIndex);
+
     const source = /\.xlsx?$/i.test(file.name) ? "xlsx" : "csv";
-    const persisted = await persistImport(records, source, { skipDuplicates: true });
+    const persisted = await persistImport(importable, source, { skipDuplicates: true });
     if (!persisted.ok) {
       return Response.json({ ok: false, message: persisted.message }, { status: persisted.status });
     }
@@ -88,7 +100,7 @@ export async function POST(request: Request): Promise<Response> {
       ok: true,
       inserted: persisted.inserted,
       skippedDuplicates: persisted.skippedDuplicates,
-      skipped,
+      skipped: allSkipped,
     });
   } catch (error) {
     const failure = failureResponse("import", error, "Importing transactions failed");

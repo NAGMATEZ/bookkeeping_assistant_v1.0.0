@@ -3,6 +3,8 @@
 // expected (hand-derived): CSV rows "-5,00" (expense) and "100,00" + direction "income"; override {"0":true}
 //   → inserted 2, amounts +500 and +10000, currency HUF; the "2024-02-30" row is skipped and reported at rowIndex 2.
 // Re-importing the same file → inserted 0, skippedDuplicates 2, and the table still has exactly 2 rows.
+// A 2020-01-01 row imports while a 2100-01-01 row is skipped at rowIndex 1 with 'Date "2100-01-01" is after
+//   today'; only the past row reaches the table.
 import { eq } from "drizzle-orm";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, it, vi } from "vitest";
@@ -28,6 +30,20 @@ function importRequest(marker = "ImportRoute"): Request {
   form.append("file", new File([new TextEncoder().encode(csv)], "import.csv", { type: "text/csv" }));
   form.append("mapping", JSON.stringify({ date: 0, description: 1, amount: 2, direction: 3, category: 4, project: 5 }));
   form.append("overrides", JSON.stringify({ "0": true }));
+  return new Request("http://localhost/api/import", { method: "POST", body: form });
+}
+
+function importRequestWithFutureDate(marker: string): Request {
+  const csv = [
+    "date;description;amount;category;project",
+    `2020-01-01;Past;10,00;Office;${marker}`,
+    `2100-01-01;Future;10,00;Office;${marker}`,
+    "",
+  ].join("\n");
+  const form = new FormData();
+  form.append("file", new File([new TextEncoder().encode(csv)], "future.csv", { type: "text/csv" }));
+  form.append("mapping", JSON.stringify({ date: 0, description: 1, amount: 2, category: 3, project: 4 }));
+  form.append("overrides", JSON.stringify({}));
   return new Request("http://localhost/api/import", { method: "POST", body: form });
 }
 
@@ -74,5 +90,20 @@ describe("POST /api/import", () => {
 
     const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
     expect(stored).toHaveLength(2);
+  });
+
+  it("skips rows dated after today", async () => {
+    const marker = `ImportFuture-${Math.random()}`;
+
+    const body = (await (await POST(importRequestWithFutureDate(marker))).json()) as {
+      inserted: number;
+      skipped: Array<{ rowIndex: number; reason: string }>;
+    };
+
+    expect(body.inserted).toBe(1);
+    expect(body.skipped).toEqual([{ rowIndex: 1, reason: 'Date "2100-01-01" is after today' }]);
+
+    const stored = await db.select().from(transactions).where(eq(transactions.project, marker));
+    expect(stored.map((row) => row.date)).toEqual([20200101]);
   });
 });

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 
+import { localizeErrorMessage } from "@/lib/error-messages";
 import { translate, type Locale, type MessageKey } from "@/lib/i18n";
 
 const LocaleContext = createContext<Locale>("hu");
@@ -18,4 +19,9 @@ export function useT() {
   const locale = useLocale();
   return (key: MessageKey, variables?: Record<string, string | number>) =>
     translate(locale, key, variables);
+}
+
+export function useLocalizeError() {
+  const locale = useLocale();
+  return (message: string) => localizeErrorMessage(locale, message);
 }

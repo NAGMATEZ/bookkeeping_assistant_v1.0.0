@@ -36,7 +36,10 @@ export default async function DashboardPage() {
   const defaultCurrency = await resolveSetting("DEFAULT_CURRENCY");
   if (!defaultCurrency) {
     return (
-      <GuardrailScreen reason="DEFAULT_CURRENCY is not set. Configure it in Settings to load the dashboard." />
+      <GuardrailScreen
+        reason="DEFAULT_CURRENCY is not set. Configure it in Settings to load the dashboard."
+        locale={locale}
+      />
     );
   }
   const currency = defaultCurrency.value;

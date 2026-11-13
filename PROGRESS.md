@@ -1,5 +1,5 @@
-Current focus: Superdesign alignment in progress - dedicated /import route with a three-step upload/mapping/review wizard, sidebar Import entry, and Transactions aligned to the canvas filter card/table/manual-entry layout; dark-mode palette preserved; tsc, 152 vitest tests, lint, and next build green
-Remaining work: align Dashboard and Settings to their canonical Superdesign drafts; add canonical invoice review and Export canvas steps
+Current focus: bilingual error notices - controlled server/validation errors show Hungarian first with the English original in parentheses in HU mode, while EN mode is unchanged; tsc, 185 vitest tests, and lint green
+Remaining work: keep new controlled error strings covered by src/lib/error-messages.ts; align Dashboard and Settings to their canonical Superdesign drafts
 
 - [DONE] src/db/schema.ts - 3-table Drizzle schema (invoices, transactions, settings) with net/VAT/gross, content_hash, source_image/MIME, and transaction source - notes: SUBMISSION_NOTES.md #7
 - [DONE] drizzle/0001_version_update.sql - upgrade-in-place migration for the version-update columns and legacy data backfill - notes: SUBMISSION_NOTES.md #7
@@ -14,6 +14,8 @@ Remaining work: align Dashboard and Settings to their canonical Superdesign draf
 - [DONE] src/lib/preferences.ts - async cookie locale/theme readers and localized metadata - notes:
 - [DONE] src/components/layout/i18n-provider.tsx - React context exposing locale and translator - notes:
 - [DONE] src/lib/diagnostics.ts - redacting console.error logger + specific client failure messages - notes:
+- [DONE] src/lib/error-messages.ts - bilingual HU (EN) catalog for controlled server/validation errors, import skip reasons, and guardrail reasons - notes:
+- [DONE] tests/error-messages.test.ts - fixed/dynamic server message, multi-currency, skip-reason, and English-mode localization checks - notes:
 - [DONE] src/lib/startup-gate.ts - env presence + real SELECT 1 check through shared db - notes:
 - [DONE] src/components/layout/guardrail-screen.tsx - localized startup failure screen - notes:
 - [DONE] src/components/layout/sidebar.tsx - responsive nav with localized labels, theme toggle, language selector - notes:

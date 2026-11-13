@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { useLocale, useT } from "@/components/layout/i18n-provider";
+import { useLocale, useLocalizeError, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import type { InvoiceLineItem } from "@/lib/invoice-parse";
@@ -119,6 +119,7 @@ export function InvoiceTable({
   const router = useRouter();
   const t = useT();
   const locale = useLocale();
+  const localizeError = useLocalizeError();
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -207,7 +208,9 @@ export function InvoiceTable({
       if (!response.ok || body?.ok !== true) {
         setFeedback({
           kind: "error",
-          message: body?.message ?? t("invoices.confirmFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("invoices.confirmFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }
@@ -295,7 +298,9 @@ export function InvoiceTable({
       if (!response.ok || body?.ok !== true) {
         setFeedback({
           kind: "error",
-          message: body?.message ?? t("invoices.saveFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("invoices.saveFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }
@@ -331,7 +336,9 @@ export function InvoiceTable({
       if (!response.ok || body?.ok !== true) {
         setFeedback({
           kind: "error",
-          message: body?.message ?? t("invoices.deleteFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("invoices.deleteFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }

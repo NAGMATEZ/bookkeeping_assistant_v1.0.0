@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useLocale, useT } from "@/components/layout/i18n-provider";
+import { useLocale, useLocalizeError, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { formatMoneyAbsolute } from "@/lib/format";
 import type { MessageKey } from "@/lib/i18n";
@@ -33,6 +33,7 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
   const router = useRouter();
   const t = useT();
   const locale = useLocale();
+  const localizeError = useLocalizeError();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
 
@@ -53,7 +54,9 @@ export function TransactionTable({ rows }: { rows: TransactionTableRow[] }) {
       const response = await fetch(`/api/transactions/${row.id}`, { method: "DELETE" });
       const body = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
       if (!response.ok || body?.ok !== true) {
-        setFeedback(body?.message ?? t("transactions.deleteFailedHttp", { status: response.status }));
+        setFeedback(
+          localizeError(body?.message ?? t("transactions.deleteFailedHttp", { status: response.status })),
+        );
         return;
       }
       router.refresh();

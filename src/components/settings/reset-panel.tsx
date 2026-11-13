@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { useT } from "@/components/layout/i18n-provider";
+import { useLocalizeError, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 
 type Status = { kind: "idle" } | { kind: "busy" } | { kind: "success" | "error"; message: string };
@@ -11,6 +11,7 @@ type Status = { kind: "idle" } | { kind: "busy" } | { kind: "success" | "error";
 export function ResetPanel() {
   const router = useRouter();
   const t = useT();
+  const localizeError = useLocalizeError();
   const [confirmation, setConfirmation] = useState("");
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const word = t("settings.confirmWord");
@@ -29,7 +30,9 @@ export function ResetPanel() {
       if (!response.ok || body?.ok !== true) {
         setStatus({
           kind: "error",
-          message: body?.message ?? t("settings.resetFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("settings.resetFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }

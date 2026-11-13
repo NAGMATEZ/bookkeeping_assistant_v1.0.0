@@ -1,5 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 
+import { localizeErrorMessage } from "@/lib/error-messages";
 import { translate, type Locale } from "@/lib/i18n";
 
 export function GuardrailScreen({ reason, locale = "hu" }: { reason: string; locale?: Locale }) {
@@ -18,7 +19,7 @@ export function GuardrailScreen({ reason, locale = "hu" }: { reason: string; loc
           {translate(locale, "guardrail.body")}
         </p>
         <p className="mt-3 rounded-lg bg-muted px-3 py-2 font-mono text-xs break-words text-foreground/80">
-          {reason}
+          {localizeErrorMessage(locale, reason)}
         </p>
         <p className="mt-4 text-sm text-muted-foreground">
           {translate(locale, "guardrail.configure")}

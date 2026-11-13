@@ -620,8 +620,49 @@ const en: Record<MessageKey, string> = {
 
 export const messages: Record<Locale, Record<MessageKey, string>> = { hu, en };
 
+// Error notices are shown bilingually in Hungarian mode: the Hungarian sentence first, then the
+// English original in parentheses. English mode is intentionally left untouched. This only covers
+// messages authored by the app; raw provider/database errors never pass through this set.
+export const ERROR_MESSAGE_KEYS: ReadonlySet<MessageKey> = new Set<MessageKey>([
+  "transactions.saveFailed",
+  "transactions.saveFailedHttp",
+  "transactions.deleteFailed",
+  "transactions.deleteFailedHttp",
+  "import.previewFailed",
+  "import.previewFailedHttp",
+  "import.importFailed",
+  "import.importFailedHttp",
+  "invoices.currencyMissing",
+  "invoices.uploadFailed",
+  "invoices.uploadFailedHttp",
+  "invoices.chooseFile",
+  "invoices.mismatch",
+  "invoices.multicurrencyMessage",
+  "invoices.confirmFailed",
+  "invoices.confirmFailedHttp",
+  "invoices.lineItemsMismatch",
+  "invoices.lineItemMismatch",
+  "invoices.lineItemsTotalsMismatch",
+  "invoices.lineDescriptionRequired",
+  "invoices.saveFailed",
+  "invoices.saveFailedHttp",
+  "invoices.deleteFailed",
+  "invoices.deleteFailedHttp",
+  "settings.currencyMissing",
+  "settings.saveFailed",
+  "settings.saveFailedHttp",
+  "settings.resetFailed",
+  "settings.resetFailedHttp",
+]);
+
 export function isLocale(value: string | undefined | null): value is Locale {
   return value === "hu" || value === "en";
+}
+
+function interpolate(template: string, variables: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
+    name in variables ? String(variables[name]) : match,
+  );
 }
 
 export function translate(
@@ -630,9 +671,16 @@ export function translate(
   variables: Record<string, string | number> = {},
 ): string {
   const template = messages[locale][key] ?? messages[DEFAULT_LOCALE][key];
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in variables ? String(variables[name]) : match,
-  );
+  const text = interpolate(template, variables);
+
+  if (locale === "hu" && ERROR_MESSAGE_KEYS.has(key)) {
+    const english = interpolate(messages.en[key], variables);
+    if (english !== text) {
+      return `${text} (${english})`;
+    }
+  }
+
+  return text;
 }
 
 export function createTranslator(locale: Locale) {

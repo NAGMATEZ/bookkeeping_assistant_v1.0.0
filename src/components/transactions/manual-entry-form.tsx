@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { useT } from "@/components/layout/i18n-provider";
+import { useLocalizeError, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 import { todayIsoDate } from "@/lib/dates";
 
@@ -19,6 +19,7 @@ const INPUT_CLASS =
 export function ManualEntryForm() {
   const router = useRouter();
   const t = useT();
+  const localizeError = useLocalizeError();
   const [date, setDate] = useState("");
   const [amount, setAmount] = useState("");
   const [isIncome, setIsIncome] = useState(false);
@@ -56,7 +57,9 @@ export function ManualEntryForm() {
       if (!response.ok || body?.ok !== true) {
         setStatus({
           kind: "error",
-          message: body?.message ?? t("transactions.saveFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("transactions.saveFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }

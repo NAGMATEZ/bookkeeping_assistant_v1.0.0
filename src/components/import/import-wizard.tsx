@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Check, FileUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent, type DragEvent } from "react";
 
-import { useT } from "@/components/layout/i18n-provider";
+import { useLocalizeError, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 import type { MessageKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -137,6 +137,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 export function ImportWizard() {
   const router = useRouter();
   const t = useT();
+  const localizeError = useLocalizeError();
   const [step, setStep] = useState<Step>(1);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -166,7 +167,9 @@ export function ImportWizard() {
       if (!response.ok || body?.ok !== true) {
         setFeedback({
           kind: "error",
-          message: body?.message ?? t("import.previewFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("import.previewFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }
@@ -264,7 +267,9 @@ export function ImportWizard() {
       if (!response.ok || body?.ok !== true) {
         setFeedback({
           kind: "error",
-          message: body?.message ?? t("import.importFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("import.importFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }
@@ -547,7 +552,7 @@ export function ImportWizard() {
                         <li key={row.rowIndex}>
                           {t("import.rowDetail", {
                             row: row.rowIndex + 1,
-                            reason: row.reason,
+                            reason: localizeError(row.reason),
                           })}
                         </li>
                       ))}

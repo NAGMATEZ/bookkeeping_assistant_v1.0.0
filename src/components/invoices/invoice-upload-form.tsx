@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 
-import { useT } from "@/components/layout/i18n-provider";
+import { useLocalizeError, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 
 type Status =
@@ -15,6 +15,7 @@ type Status =
 export function InvoiceUploadForm() {
   const router = useRouter();
   const t = useT();
+  const localizeError = useLocalizeError();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -42,7 +43,9 @@ export function InvoiceUploadForm() {
       if (!response.ok || body?.ok !== true) {
         setStatus({
           kind: "error",
-          message: body?.message ?? t("invoices.uploadFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("invoices.uploadFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }

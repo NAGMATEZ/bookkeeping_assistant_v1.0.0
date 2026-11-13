@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 
-import { useT } from "@/components/layout/i18n-provider";
+import { useLocalizeError, useT } from "@/components/layout/i18n-provider";
 import { Button } from "@/components/ui/button";
 
 export type SettingsFormInitialValues = {
@@ -63,6 +63,7 @@ function TextField({
 
 export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }) {
   const t = useT();
+  const localizeError = useLocalizeError();
   const [primaryBaseUrl, setPrimaryBaseUrl] = useState(initial.primaryBaseUrl);
   const [primaryModel, setPrimaryModel] = useState(initial.primaryModel);
   const [primaryApiKey, setPrimaryApiKey] = useState("");
@@ -104,7 +105,9 @@ export function SettingsForm({ initial }: { initial: SettingsFormInitialValues }
       if (!response.ok || body?.ok !== true) {
         setStatus({
           kind: "error",
-          message: body?.message ?? t("settings.saveFailedHttp", { status: response.status }),
+          message: localizeError(
+            body?.message ?? t("settings.saveFailedHttp", { status: response.status }),
+          ),
         });
         return;
       }
